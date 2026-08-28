@@ -1,0 +1,9 @@
+# Fins de ligne normalisées en LF partout : Prettier est configuré en `lf`,
+# sans quoi une clone sous Windows ferait échouer `npm run format:check`.
+* text=auto eol=lf
+
+# Binaires
+*.png binary
+*.jpg binary
+*.ttf binary
+*.otf binary
