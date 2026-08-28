@@ -17,10 +17,19 @@ export interface SessionState {
   expandedMealType?: MealType;
   /** Vrai tant que les migrations SQLite n'ont pas abouti. */
   databaseReady: boolean;
+  /**
+   * Jeton d'invalidation, incrémenté à chaque écriture du profil.
+   *
+   * Ce n'est pas une donnée : c'est ce qui dit aux écrans de relire le profil
+   * en base. Tant que TanStack Query n'est pas branché (Phase 4), il tient lieu
+   * d'invalidation de cache — sans jamais dupliquer la donnée hors de SQLite.
+   */
+  profileRevision: number;
 
   setSelectedDate: (date: string) => void;
   toggleMealType: (mealType: MealType) => void;
   setDatabaseReady: (ready: boolean) => void;
+  bumpProfileRevision: () => void;
   reset: () => void;
 }
 
@@ -36,7 +45,11 @@ const initialState = {
   selectedDate: todayIsoDate(),
   expandedMealType: undefined,
   databaseReady: false,
-} satisfies Omit<SessionState, 'setSelectedDate' | 'toggleMealType' | 'setDatabaseReady' | 'reset'>;
+  profileRevision: 0,
+} satisfies Omit<
+  SessionState,
+  'setSelectedDate' | 'toggleMealType' | 'setDatabaseReady' | 'bumpProfileRevision' | 'reset'
+>;
 
 export const useSessionStore = create<SessionState>((set) => ({
   ...initialState,
@@ -49,6 +62,8 @@ export const useSessionStore = create<SessionState>((set) => ({
     })),
 
   setDatabaseReady: (databaseReady) => set({ databaseReady }),
+
+  bumpProfileRevision: () => set((state) => ({ profileRevision: state.profileRevision + 1 })),
 
   reset: () => set({ ...initialState, selectedDate: todayIsoDate() }),
 }));

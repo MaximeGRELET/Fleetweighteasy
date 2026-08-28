@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { FoodItem, Meal, MealItem, ServingSize } from '@/domain/food/types';
 import type { FoodLogEntry } from '@/domain/journal/types';
 import type { WeightEntry } from '@/domain/progress/types';
-import type { UserProfile } from '@/domain/profile/types';
+import type { SportProfile, UserProfile } from '@/domain/profile/types';
 import type { WorkoutLogEntry, WorkoutPayload } from '@/domain/training/types';
 
 import {
@@ -50,6 +50,12 @@ export const CONSENT_ROW_ID = 1;
 const stringArraySchema = z.array(z.string());
 
 const servingSizesSchema = z.array(z.object({ label: z.string(), grams: z.number().positive() }));
+
+const sportProfileSchema = z.object({
+  practices: z.array(z.enum(['strength', 'cardio'])),
+  strengthEnvironments: z.array(z.enum(['gym', 'home'])),
+  cardioActivities: z.array(z.enum(['walking', 'running', 'cycling'])),
+});
 
 const mealItemsSchema = z.array(
   z.object({ foodItemId: z.string(), quantityG: z.number().positive() }),
@@ -116,6 +122,15 @@ export function toUserProfile(row: ProfileRow): UserProfile {
     ...(row.weeklyRateKg === null ? {} : { weeklyRateKg: row.weeklyRateKg }),
     activityLevel: row.activityLevel,
     trainingDaysPerWeek: row.trainingDaysPerWeek,
+    ...(row.sportProfile === null
+      ? {}
+      : {
+          sportProfile: parseJsonColumn<SportProfile>(
+            sportProfileSchema,
+            row.sportProfile,
+            'profile.sport_profile',
+          ),
+        }),
     dietType: row.dietType,
     allergies: parseJsonColumn(stringArraySchema, row.allergies, 'profile.allergies'),
     dislikes: parseJsonColumn(stringArraySchema, row.dislikes, 'profile.dislikes'),
@@ -139,6 +154,8 @@ export function toProfileInsert(
     weeklyRateKg: userProfile.weeklyRateKg ?? null,
     activityLevel: userProfile.activityLevel,
     trainingDaysPerWeek: userProfile.trainingDaysPerWeek,
+    sportProfile:
+      userProfile.sportProfile === undefined ? null : JSON.stringify(userProfile.sportProfile),
     dietType: userProfile.dietType,
     allergies: JSON.stringify(userProfile.allergies),
     dislikes: JSON.stringify(userProfile.dislikes),

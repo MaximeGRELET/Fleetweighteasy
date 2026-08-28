@@ -73,6 +73,31 @@ bouge pas. Les totaux du jour somment les snapshots, jamais une jointure sur les
 synchro existe. Les suppressions y laissent une pierre tombale, sans quoi elles ne pourraient
 jamais être propagées au serveur.
 
+## Onboarding
+
+Le parcours vit dans [src/app/(onboarding)/](<src/app/(onboarding)/>) : accueil, consentement,
+puis sept à neuf écrans de profilage selon l'objectif choisi. Trois règles le structurent.
+
+**Le consentement précède la collecte.** L'écran de consentement est bloquant et écrit dans la
+table `consent` (horodatage + version de politique) avant qu'une ligne de profil puisse exister.
+L'écran de biométrie redirige vers lui tant qu'il n'a pas été donné — le garde-fou est structurel,
+pas seulement visuel.
+
+**Aucune règle métier n'est réécrite dans l'UI.** Les schémas Zod par écran vivent dans
+[src/domain/profile/validation.ts](src/domain/profile/validation.ts) et composent les bornes du
+domaine. Le plafond du curseur de rythme vient de `getMaxWeeklyRateKg`, le contrôle d'IMC du poids
+cible de `classifyBmi`.
+
+**Aucun ajustement n'est silencieux.** Chaque `adjustment` et `warning` remonté par le domaine est
+traduit en langage clair par [src/lib/messages/safety.ts](src/lib/messages/safety.ts) et affiché
+sur l'écran de restitution. Cas particulièrement soigné : quand le plancher calorique place
+l'objectif **au-dessus** de la dépense estimée, un message dédié explique que c'est volontaire —
+sans quoi l'utilisateur croirait à un bug. Un test de balayage vérifie qu'aucun drapeau du domaine
+ne peut rester sans message.
+
+Le profil n'est persisté qu'au dernier écran ; les objectifs, eux, ne sont jamais stockés — ils se
+recalculent depuis le profil à chaque affichage.
+
 ## Documentation
 
 La planification complète vit dans [`files/`](files/) — point d'entrée :

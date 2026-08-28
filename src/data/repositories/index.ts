@@ -1,39 +1,25 @@
 import { db } from '@/data/db/client';
 import { createId } from '@/lib/id';
 
-import { createConsentRepository } from './consent.repo';
 import type { RepositoryContext } from './context';
-import { createFoodLogRepository } from './food-log.repo';
-import { createFoodRepository } from './food.repo';
-import { createMealRepository } from './meal.repo';
-import { createProfileRepository } from './profile.repo';
-import { createWeightRepository } from './weight.repo';
-import { createWorkoutRepository } from './workout.repo';
+import { createRepositories, type Repositories } from './factory';
 
 /**
  * Câblage des repositories sur la base de l'application.
  *
- * C'est le seul endroit qui associe les repositories à SQLite, aux UUID et à
- * l'horloge système. Les tests construisent leur propre contexte avec une base
- * en mémoire, une horloge figée et des identifiants déterministes.
+ * Seul module qui associe les repositories à SQLite, aux UUID et à l'horloge
+ * système — et donc le seul qui importe `@/data/db/client`. Il est appelé une
+ * fois par le layout racine, qui diffuse le résultat via `RepositoriesProvider`.
  *
- * Les hooks (`src/hooks/`) consomment ces instances ; l'UI ne les importe
- * jamais directement — c'est vérifié par ESLint.
+ * Les tests ne passent jamais par ici : ils construisent leur propre contexte
+ * avec `createRepositories`.
  */
-const appContext: RepositoryContext = {
-  db,
-  generateId: createId,
-  now: () => new Date(),
-};
+export function createAppRepositories(): Repositories {
+  const context: RepositoryContext = { db, generateId: createId, now: () => new Date() };
+  return createRepositories(context);
+}
 
-export const consentRepo = createConsentRepository(appContext);
-export const profileRepo = createProfileRepository(appContext);
-export const foodRepo = createFoodRepository(appContext);
-export const mealRepo = createMealRepository(appContext);
-export const foodLogRepo = createFoodLogRepository(appContext);
-export const weightRepo = createWeightRepository(appContext);
-export const workoutRepo = createWorkoutRepository(appContext);
-
+export { createRepositories, type Repositories } from './factory';
 export type { RepositoryContext } from './context';
 export { type ConsentRecord, type ConsentRepository } from './consent.repo';
 export { type FoodLogRepository } from './food-log.repo';

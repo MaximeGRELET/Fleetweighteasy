@@ -52,6 +52,8 @@ export const profile = sqliteTable(
       enum: ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'],
     }).notNull(),
     trainingDaysPerWeek: integer('training_days_per_week').notNull(),
+    /** JSON : `{ practices, strengthEnvironments, cardioActivities }`. */
+    sportProfile: text('sport_profile'),
 
     // Alimentation (listes sérialisées en JSON : jamais interrogées en SQL)
     dietType: text('diet_type', {

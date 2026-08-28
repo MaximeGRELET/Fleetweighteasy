@@ -25,6 +25,27 @@ export type CalorieMode = 'fixed' | 'credited';
 
 export type DietType = 'omnivore' | 'flexitarian' | 'pescatarian' | 'vegetarian' | 'vegan';
 
+/** Discipline pratiquée. Cardio et musculation ne se pilotent pas pareil. */
+export type SportPractice = 'strength' | 'cardio';
+
+/** Où l'utilisateur fait sa musculation : cela détermine les exercices proposés. */
+export type StrengthEnvironment = 'gym' | 'home';
+
+export type CardioActivityPractice = 'walking' | 'running' | 'cycling';
+
+/**
+ * Sports pratiqués et moyens disponibles.
+ *
+ * Recueilli à l'onboarding, exploité en Phase 8 pour proposer des exercices
+ * réalisables. Optionnel : tant qu'il est absent, aucun programme n'est proposé
+ * — mieux vaut ne rien suggérer que de suggérer du matériel inaccessible.
+ */
+export interface SportProfile {
+  practices: SportPractice[];
+  strengthEnvironments: StrengthEnvironment[];
+  cardioActivities: CardioActivityPractice[];
+}
+
 export interface UserProfile {
   // Biométrie
   sex: Sex;
@@ -42,6 +63,7 @@ export interface UserProfile {
   // Activité & sport
   activityLevel: ActivityLevel;
   trainingDaysPerWeek: number;
+  sportProfile?: SportProfile;
 
   // Alimentation (exploitée à partir de la Phase 7 ; présente ici pour cohérence)
   dietType: DietType;

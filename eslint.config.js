@@ -76,6 +76,12 @@ module.exports = defineConfig([
     },
   },
   {
+    // Les fabriques de `jest.mock` sont hissées : elles ne peuvent pas utiliser
+    // un `import` statique, `require` est ici la seule option.
+    files: ['jest.setup.ts'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
     files: ['tests/**/*.ts', 'tests/**/*.tsx'],
     languageOptions: {
       globals: { jest: 'readonly' },

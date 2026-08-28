@@ -11,6 +11,7 @@ module.exports = {
     'src/domain/**/*.ts',
     'src/data/**/*.ts',
     'src/stores/**/*.ts',
+    'src/lib/**/*.ts',
     // Modules purement déclaratifs : types du domaine et schéma Drizzle. Ils
     // sont vérifiés par le typage et par les tests de migration, pas par une
     // métrique de lignes exécutées.
@@ -19,6 +20,11 @@ module.exports = {
     '!src/data/db/client.ts',
     '!src/data/db/migrator.ts',
     '!src/data/repositories/index.ts',
+    // Câblage à la plateforme, sans logique propre.
+    '!src/lib/id.ts',
+    '!src/lib/app-info.ts',
+    '!src/lib/env.ts',
+    '!src/lib/observability/**',
     '!src/**/*.d.ts',
   ],
   coverageThreshold: {
@@ -32,6 +38,21 @@ module.exports = {
     'src/domain/journal/**/*.ts': {
       statements: 100,
       branches: 100,
+      functions: 100,
+      lines: 100,
+    },
+    // Modèle et validation du profil : mêmes enjeux que les formules.
+    'src/domain/profile/**/*.ts': {
+      statements: 100,
+      branches: 95,
+      functions: 100,
+      lines: 100,
+    },
+    // Traduction des garde-fous et formatage : un message manquant serait un
+    // ajustement silencieux.
+    'src/lib/**/*.ts': {
+      statements: 100,
+      branches: 95,
       functions: 100,
       lines: 100,
     },

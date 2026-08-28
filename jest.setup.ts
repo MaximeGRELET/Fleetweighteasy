@@ -1,3 +1,8 @@
-// Le domaine (Phase 1) est du TypeScript pur et n'a besoin d'aucun mock.
-// Ce fichier accueillera les mocks des phases UI/data (SQLite, réseau, Sentry).
+/**
+ * Expo Router est remplacé globalement : les écrans testés vivent dans
+ * `src/app/`, et on veut observer leurs effets sans monter une vraie
+ * navigation. Voir `tests/support/router-mock.tsx`.
+ */
+jest.mock('expo-router', () => require('./tests/support/router-mock'));
+
 export {};
