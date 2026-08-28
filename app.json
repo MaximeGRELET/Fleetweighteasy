@@ -37,7 +37,8 @@
         }
       ],
       "@sentry/react-native",
-      "expo-localization"
+      "expo-localization",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

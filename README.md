@@ -51,6 +51,28 @@ Deux règles sont vérifiées automatiquement par ESLint plutôt que par relectu
 - `src/domain/**` ne peut importer ni React, ni Expo, ni la couche data, ni la télémétrie ;
 - `src/app/**` et `src/components/**` ne peuvent pas importer `@/data` directement.
 
+## Persistance
+
+Local-first : toute donnée utilisateur vit d'abord en SQLite sur l'appareil, via Drizzle. La
+synchro serveur (Phase 9) viendra par-dessus, sans remettre cette couche en cause.
+
+- Le schéma est dans [src/data/db/schema.ts](src/data/db/schema.ts) ; après l'avoir modifié,
+  lancer `npm run db:generate` et **commiter les fichiers générés** — les tests d'intégration
+  rejouent ces mêmes migrations.
+- Les repositories reçoivent leur base, leur horloge et leur générateur d'identifiants par
+  injection : les tests tournent sur SQLite en mémoire, sans appareil ni émulateur.
+
+Deux décisions structurantes, prises tôt parce qu'elles sont coûteuses à rattraper :
+
+**Le snapshot nutritionnel.** Une entrée de journal fige ses valeurs nutritionnelles à l'ajout.
+Si un produit Open Food Facts est corrigé six mois plus tard, l'historique de l'utilisateur ne
+bouge pas. Les totaux du jour somment les snapshots, jamais une jointure sur les aliments.
+
+**Le journal de synchronisation.** La table `sync_meta` (`dirty` / `updatedAt` / `syncedAt` /
+`deletedAt`) est écrite dans la même transaction que chaque écriture métier, bien avant que la
+synchro existe. Les suppressions y laissent une pierre tombale, sans quoi elles ne pourraient
+jamais être propagées au serveur.
+
 ## Documentation
 
 La planification complète vit dans [`files/`](files/) — point d'entrée :
