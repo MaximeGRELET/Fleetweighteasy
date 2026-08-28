@@ -1,4 +1,4 @@
-import { fireEvent } from '@testing-library/react-native';
+import { fireEvent, within } from '@testing-library/react-native';
 
 import ActivityScreen from '@/app/(onboarding)/activity';
 import DietScreen from '@/app/(onboarding)/diet';
@@ -6,9 +6,11 @@ import RateScreen from '@/app/(onboarding)/rate';
 import TargetWeightScreen from '@/app/(onboarding)/target-weight';
 import TrainingScreen from '@/app/(onboarding)/training';
 import WelcomeScreen from '@/app/(onboarding)/index';
+import { calculateCalorieTarget, weeklyRateToDeficitKcal } from '@/domain/nutrition/energy';
 import { getMaxWeeklyRateKg } from '@/domain/nutrition/safety';
 import { minimumHealthyWeightKg } from '@/domain/profile/bmi';
-import { formatKg } from '@/lib/format';
+import { buildUserProfile, type ProfileDraft } from '@/domain/profile/draft';
+import { formatKcal, formatKg, formatWeeklyRate } from '@/lib/format';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 import { asRenderedText, createAppHarness, type AppHarness } from '../support/render-with-app';
@@ -183,6 +185,151 @@ describe('écran de rythme', () => {
 
     expect(useOnboardingStore.getState().draft.weeklyRateKg).toBe(0.4);
     expect(routerMock.push).toHaveBeenCalledWith('/(onboarding)/summary');
+  });
+});
+
+/**
+ * Le déficit quotidien est écrêté à 750 kcal, indépendamment du plafond de
+ * rythme. Selon le poids, la moitié haute du curseur pointe donc un rythme que
+ * le corps n'atteindra pas — et cela ne doit jamais rester silencieux.
+ */
+describe('écran de rythme — écrêtage du déficit', () => {
+  let harness: AppHarness;
+
+  /** Profil complet : sans lui, l'écran ne peut pas projeter le résultat réel. */
+  const PROFILE: Partial<ProfileDraft> = {
+    goalType: 'weight_loss',
+    sex: 'male',
+    birthDate: '1996-01-15',
+    heightCm: 180,
+    activityLevel: 'moderately_active',
+    trainingDaysPerWeek: 3,
+    dietType: 'omnivore',
+  };
+
+  function projectionFor(currentWeightKg: number, weeklyRateKg: number) {
+    return calculateCalorieTarget(
+      buildUserProfile({
+        allergies: [],
+        dislikes: [],
+        calorieMode: 'fixed',
+        ...PROFILE,
+        currentWeightKg,
+        weeklyRateKg,
+      } as ProfileDraft),
+    );
+  }
+
+  beforeEach(() => {
+    harness = createAppHarness();
+  });
+
+  afterEach(() => {
+    harness.cleanup();
+  });
+
+  describe('au-dessus du seuil d’écrêtage', () => {
+    // 90 kg : le curseur monte à 0,9 kg/semaine, soit 990 kcal de déficit
+    // théorique — bien au-delà du plafond de 750.
+    const WEIGHT_KG = 90;
+    const REQUESTED_RATE_KG = 0.9;
+
+    async function renderAtMaxRate() {
+      harness.setDraft({ ...PROFILE, currentWeightKg: WEIGHT_KG });
+      const screen = await harness.renderScreen(<RateScreen />);
+      await fireEvent(screen.getByTestId('rate-slider'), 'valueChange', REQUESTED_RATE_KG);
+      return screen;
+    }
+
+    it('est bien un cas d’écrêtage', () => {
+      const projection = projectionFor(WEIGHT_KG, REQUESTED_RATE_KG);
+
+      expect(projection.adjustments).toContain('deficit_capped');
+      expect(projection.effectiveWeeklyRateKg).toBeLessThan(REQUESTED_RATE_KG);
+    });
+
+    it('affiche le message d’explication', async () => {
+      const screen = await renderAtMaxRate();
+
+      expect(screen.getByTestId('explanation-rate_clipped')).toBeTruthy();
+    });
+
+    it('donne le déficit théorique, la limite appliquée et la perte réelle', async () => {
+      const screen = await renderAtMaxRate();
+      const projection = projectionFor(WEIGHT_KG, REQUESTED_RATE_KG);
+
+      const message = within(screen.getByTestId('explanation-rate_clipped'));
+
+      expect(
+        message.getByText(asRenderedText(formatKcal(weeklyRateToDeficitKcal(REQUESTED_RATE_KG)))),
+      ).toBeTruthy();
+      expect(
+        message.getByText(asRenderedText(formatKcal(projection.appliedDeficitKcal))),
+      ).toBeTruthy();
+      expect(
+        message.getByText(asRenderedText(formatWeeklyRate(projection.effectiveWeeklyRateKg))),
+      ).toBeTruthy();
+    });
+
+    it('affiche la perte réellement atteignable, distincte du rythme pointé', async () => {
+      const screen = await renderAtMaxRate();
+      const projection = projectionFor(WEIGHT_KG, REQUESTED_RATE_KG);
+
+      const requested = screen.getByTestId('rate-requested').props.children;
+      const effective = formatWeeklyRate(projection.effectiveWeeklyRateKg);
+
+      expect(requested).toBe(formatWeeklyRate(REQUESTED_RATE_KG));
+      expect(effective).not.toBe(requested);
+      expect(screen.getByTestId('rate-effective').props.children).toBe(effective);
+    });
+  });
+
+  describe('en dessous du seuil d’écrêtage', () => {
+    it('n’affiche aucun message : le rythme demandé sera tenu', async () => {
+      harness.setDraft({ ...PROFILE, currentWeightKg: 90 });
+      const screen = await harness.renderScreen(<RateScreen />);
+
+      await fireEvent(screen.getByTestId('rate-slider'), 'valueChange', 0.5);
+
+      expect(screen.queryByTestId('explanation-rate_clipped')).toBeNull();
+      expect(projectionFor(90, 0.5).adjustments).toEqual([]);
+    });
+
+    it('affiche alors une perte atteignable égale au rythme pointé', async () => {
+      harness.setDraft({ ...PROFILE, currentWeightKg: 90 });
+      const screen = await harness.renderScreen(<RateScreen />);
+
+      await fireEvent(screen.getByTestId('rate-slider'), 'valueChange', 0.5);
+
+      // Rien n'étant écrêté, le rythme pointé et la perte atteignable coïncident.
+      expect(screen.getByTestId('rate-requested').props.children).toBe(formatWeeklyRate(0.5));
+      expect(screen.getByTestId('rate-effective').props.children).toBe(formatWeeklyRate(0.5));
+    });
+
+    it('ne se déclenche jamais pour un poids dont le plafond reste sous le seuil', async () => {
+      // 55 kg : au maximum du curseur (0,55 kg/sem), le déficit reste sous 750.
+      harness.setDraft({ ...PROFILE, currentWeightKg: 55 });
+      const screen = await harness.renderScreen(<RateScreen />);
+
+      await fireEvent(screen.getByTestId('rate-slider'), 'valueChange', 0.55);
+
+      expect(screen.queryByTestId('explanation-rate_clipped')).toBeNull();
+      expect(projectionFor(55, 0.55).adjustments).toEqual([]);
+    });
+  });
+
+  it('n’écrête rien lui-même : la projection vient du domaine', async () => {
+    harness.setDraft({ ...PROFILE, currentWeightKg: 90 });
+    const screen = await harness.renderScreen(<RateScreen />);
+
+    await fireEvent(screen.getByTestId('rate-slider'), 'valueChange', 0.9);
+    const projection = projectionFor(90, 0.9);
+
+    // L'objectif affiché est celui que renverra le domaine au moment de le
+    // persister : aucune valeur intermédiaire recalculée ici.
+    expect(
+      screen.getAllByText(asRenderedText(formatKcal(projection.targetKcal))).length,
+    ).toBeGreaterThan(0);
   });
 });
 

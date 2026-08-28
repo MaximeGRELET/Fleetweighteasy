@@ -1,4 +1,4 @@
-import type { CalorieTargetResult } from '@/domain/nutrition/energy';
+import { weeklyRateToDeficitKcal, type CalorieTargetResult } from '@/domain/nutrition/energy';
 import type { MacroResult } from '@/domain/nutrition/macros';
 import type { ExplanationKey } from '@/domain/nutrition/calories-sport';
 import { MAX_DAILY_DEFICIT_KCAL } from '@/domain/nutrition/safety';
@@ -112,6 +112,54 @@ function buildFloorExplanation(result: CalorieTargetResult): Explanation {
       `suivi médical. Ta perte sera un peu plus lente — environ ` +
       `${formatWeeklyRate(result.effectiveWeeklyRateKg)} — mais bien plus tenable.`,
   };
+}
+
+/**
+ * Explique, pendant le réglage du rythme, l'écart entre ce que l'utilisateur
+ * pointe et ce que son corps encaissera réellement.
+ *
+ * Sans ce message, déplacer le curseur dans sa moitié haute ne changerait rien
+ * à l'écran : le déficit est écrêté par le domaine, et l'utilisateur croirait à
+ * une perte qui ne se produira pas.
+ *
+ * Toutes les valeurs viennent de `CalorieTargetResult` ou des fonctions du
+ * domaine — le seuil d'écrêtage dépend du poids, il n'y a donc aucune constante
+ * d'écran à comparer.
+ */
+export function explainRateSelection(input: {
+  requestedWeeklyRateKg: number;
+  result: CalorieTargetResult;
+}): Explanation[] {
+  const { requestedWeeklyRateKg, result } = input;
+  const explanations: Explanation[] = [];
+
+  const isClipped =
+    result.adjustments.includes('deficit_capped') || result.adjustments.includes('rate_capped');
+
+  // Un déficit appliqué négatif signifie que le plancher a pris le dessus :
+  // parler d'une « limite » du déficit n'aurait alors aucun sens, et le message
+  // de plancher ci-dessous dit déjà ce qu'il faut.
+  if (isClipped && result.appliedDeficitKcal > 0) {
+    explanations.push({
+      id: 'rate_clipped',
+      tone: 'caution',
+      title: 'Ce rythme ne sera pas atteint',
+      body:
+        `À ce rythme, le déficit serait de ` +
+        `${formatKcal(weeklyRateToDeficitKcal(requestedWeeklyRateKg))} par jour. Pour préserver ` +
+        `ta santé, on le limite à ${formatKcal(result.appliedDeficitKcal)}, donc ta perte réelle ` +
+        `sera d'environ ${formatWeeklyRate(result.effectiveWeeklyRateKg)}.`,
+    });
+  }
+
+  // Le plancher calorique peut réduire le rythme réel bien davantage encore.
+  for (const explanation of explainCalorieTarget(result)) {
+    if (explanation.id.startsWith('floor_applied')) {
+      explanations.push(explanation);
+    }
+  }
+
+  return explanations;
 }
 
 /** Traduit les ajustements de la répartition des macros. */

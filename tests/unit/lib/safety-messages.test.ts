@@ -1,4 +1,8 @@
-import { calculateCalorieTarget, type CalorieTargetResult } from '@/domain/nutrition/energy';
+import {
+  calculateCalorieTarget,
+  weeklyRateToDeficitKcal,
+  type CalorieTargetResult,
+} from '@/domain/nutrition/energy';
 import { calculateMacros } from '@/domain/nutrition/macros';
 import type { SafetyAdjustment, SafetyWarning } from '@/domain/nutrition/safety';
 import { formatKcal, formatWeeklyRate } from '@/lib/format';
@@ -7,6 +11,7 @@ import {
   CONSENT_POINTS,
   explainCalorieTarget,
   explainMacros,
+  explainRateSelection,
   SEX_FIELD_NOTE,
   WARNINGS_COVERED_BY_ADJUSTMENT,
 } from '@/lib/messages/safety';
@@ -121,6 +126,96 @@ describe('explainCalorieTarget', () => {
     expect(explanation?.body).toMatch(/médecin|diététicien/);
     // Aucun encouragement : pas de félicitation, pas d'objectif validé.
     expect(explanation?.body).not.toMatch(/bravo|félicitations|excellent/i);
+  });
+});
+
+describe('explainRateSelection', () => {
+  /**
+   * Le seuil d'écrêtage dépend du poids : le déficit est plafonné au-delà
+   * d'environ 0,68 kg/semaine, mais le curseur ne monte qu'à 1 % du poids. Une
+   * personne légère ne l'atteindra donc jamais.
+   */
+  function project(currentWeightKg: number, weeklyRateKg: number) {
+    return calculateCalorieTarget(buildProfile({ currentWeightKg, weeklyRateKg }), NOW);
+  }
+
+  it('ne dit rien tant que le rythme demandé est tenu', () => {
+    const result = project(90, 0.5);
+
+    expect(result.adjustments).toEqual([]);
+    expect(explainRateSelection({ requestedWeeklyRateKg: 0.5, result })).toEqual([]);
+  });
+
+  it('explique l’écrêtage avec les trois chiffres qui comptent', () => {
+    const requestedWeeklyRateKg = 0.9;
+    const result = project(90, requestedWeeklyRateKg);
+    const [explanation] = explainRateSelection({ requestedWeeklyRateKg, result });
+
+    expect(result.adjustments).toContain('deficit_capped');
+    expect(explanation?.id).toBe('rate_clipped');
+    // Déficit théorique, déficit appliqué, rythme réellement atteignable.
+    expect(explanation?.body).toContain(formatKcal(weeklyRateToDeficitKcal(requestedWeeklyRateKg)));
+    expect(explanation?.body).toContain(formatKcal(result.appliedDeficitKcal));
+    expect(explanation?.body).toContain(formatWeeklyRate(result.effectiveWeeklyRateKg));
+  });
+
+  it('annonce une perte réelle inférieure au rythme demandé', () => {
+    const requestedWeeklyRateKg = 0.9;
+    const result = project(90, requestedWeeklyRateKg);
+
+    expect(result.effectiveWeeklyRateKg).toBeLessThan(requestedWeeklyRateKg);
+    expect(explainRateSelection({ requestedWeeklyRateKg, result })[0]?.body).not.toContain(
+      formatWeeklyRate(requestedWeeklyRateKg),
+    );
+  });
+
+  it('ne se déclenche pas pour une personne dont le plafond de rythme reste sous le seuil', () => {
+    // 55 kg : le curseur monte au maximum à 0,55 kg/semaine, soit 605 kcal.
+    const result = project(55, 0.55);
+
+    expect(result.adjustments).toEqual([]);
+    expect(explainRateSelection({ requestedWeeklyRateKg: 0.55, result })).toEqual([]);
+  });
+
+  it('laisse le message de plancher parler quand c’est lui qui borne', () => {
+    const result = calculateCalorieTarget(
+      buildProfile({
+        sex: 'female',
+        currentWeightKg: 50,
+        heightCm: 155,
+        birthDate: birthDateForAge(60),
+        activityLevel: 'sedentary',
+        weeklyRateKg: 0.5,
+      }),
+      NOW,
+    );
+    const ids = explainRateSelection({ requestedWeeklyRateKg: 0.5, result }).map(
+      (entry) => entry.id,
+    );
+
+    expect(result.adjustments).toContain('floor_applied');
+    expect(ids).toContain('floor_applied');
+  });
+
+  it('n’annonce pas une limite de déficit quand le plancher crée un surplus', () => {
+    const result = calculateCalorieTarget(
+      buildProfile({
+        sex: 'male',
+        currentWeightKg: 55,
+        heightCm: 160,
+        birthDate: birthDateForAge(70),
+        activityLevel: 'sedentary',
+        weeklyRateKg: 0.55,
+      }),
+      NOW,
+    );
+    const ids = explainRateSelection({ requestedWeeklyRateKg: 0.55, result }).map(
+      (entry) => entry.id,
+    );
+
+    expect(result.appliedDeficitKcal).toBeLessThan(0);
+    expect(ids).not.toContain('rate_clipped');
+    expect(ids).toContain('floor_applied_above_expenditure');
   });
 });
 
