@@ -1,7 +1,7 @@
 # État d'avancement — Application d'accompagnement à la perte de poids
 
 > Document de suivi. Mis à jour au fil des phases.
-> **Dernière mise à jour :** fin Phase 5 (suivi du poids & progression). Phase 4 commitée.
+> **Dernière mise à jour :** fin Phase 6 (moteur de conseils). Phase 5 validée sur appareil.
 
 ---
 
@@ -113,6 +113,43 @@ des annonces, épinglage de la base), par un aller-retour SQLite dans
 `tests/integration/profile.repo.test.ts` — sans persistance, la dérive reviendrait à chaque
 redémarrage — et de bout en bout dans `tests/component/weight-tracking.test.tsx`.
 
+### Phase 6 — Moteur de conseils
+
+- Domaine `advice/` pur et testé à 100 % (branches comprises) : types stricts, correspondance profil ↔ tags, évaluation des conditions, sélection, construction du contexte.
+- **21 briques intégrées** telles que rédigées (ids, tags, conditions, priorités inchangés), 15 topics.
+- **Moteur déterministe** : une brique par topic, la plus prioritaire, triée par priorité décroissante.
+- **Bande de sécurité par référence** : le domaine désigne un drapeau, `lib/messages/safety.ts` reste la seule source du texte. Aucune mise en garde n'existe en double.
+- **Signaux de risque de la Phase 1 enfin dotés d'un message** (4 textes), et branchés à la bande — en attente d'un historique des objectifs pour être alimentés.
+- **Topic `plateau` possédé par l'écran poids** : le moteur s'abstient pour ne pas doubler le message de la Phase 5.
+- Conseil du jour sur le tableau + section conseils dédiée.
+- Contrôles de contenu automatisés : aucun chiffre calculé en dur, aucune formulation proscrite, priorités sans collision entre topics.
+- 993 tests au vert, lint et typecheck propres. Bundle Android vérifié via Metro.
+
+---
+
+### Décisions — Phase 6
+
+**Les garde-fous passent par référence, jamais par duplication du texte.** Leur contenu existait
+déjà dans `lib/messages/safety.ts` pour l'onboarding. En faire des briques aurait créé un second
+exemplaire de chaque mise en garde, destiné à diverger. Le moteur désigne donc un drapeau
+(`SafetyNoticeKey`) et la couche message le résout. Conséquence voulue : aucun contenu nouveau à
+rédiger pour les garde-fous de calcul.
+
+**Le plateau reste à l'écran de suivi du poids.** `explainProgressStatus` (Phase 5) l'explique déjà
+avec le nombre de semaines mesuré ; la brique `plateau__default` disait presque mot pour mot la
+même chose. Le moteur exclut le topic via `TOPICS_OWNED_ELSEWHERE`. La brique n'a pas été
+supprimée : elle est écrite et validée, et c'est le filtre qu'il faudra retirer si le produit
+change d'avis.
+
+**Ordre des garde-fous entre eux :** objectif menant à l'insuffisance pondérale, puis signaux de
+risque comportementaux, puis plancher calorique appliqué — ce dernier étant une protection _déjà
+en place_, donc plutôt rassurante. `underweight_target_requested` est masqué quand
+`goal_leads_to_underweight` est actif : c'est le même objectif, au passé et au présent.
+
+**Les garde-fous ponctuels ne sont pas répétés.** Rythme et déficit plafonnés commentent une
+décision prise à l'écran de réglage, où ils ont été expliqués. Les afficher chaque jour serait du
+harcèlement, ce que la spec exclut (§6.6).
+
 ---
 
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
@@ -134,22 +171,43 @@ redémarrage — et de bout en bout dans `tests/component/weight-tracking.test.t
 
 ---
 
-## À valider sur appareil (Phase 5)
+## À valider sur appareil (Phase 6)
 
-- [ ] Saisir une pesée, la corriger le même jour, vérifier qu'il n'y en a qu'une.
-- [ ] Vérifier que la courbe se lit bien sur écran de téléphone (contraste de la ligne face aux points, lisibilité des dates).
-- [ ] Vérifier le comportement en thème sombre.
-- [ ] Saisir assez de pesées pour déclencher un recalcul notifié, et lire le message d'ajustement.
+- [ ] Vérifier que le conseil du jour s'affiche sur le tableau et change avec la situation (nouvel utilisateur, écart récent).
+- [ ] Ouvrir la section conseils et vérifier la lisibilité des briques sur écran de téléphone.
+- [ ] Vérifier le thème sombre sur les deux surfaces.
+- [ ] Vérifier qu'une mise en garde de sécurité prend bien la place du conseil du jour.
 
 ---
 
-## Prochaine étape : Phase 6 — Moteur de conseils
+## Points relevés en Phase 6 (à arbitrer, non bloquants)
 
-Le contenu est prêt (25 briques rédigées dans `files/BRIQUES_CONSEIL_REDIGEES.md`). Le point
-d'ancrage technique existe désormais : `assessProgress` expose un statut de progression unique,
-dont `plateau`, que le moteur consommera sans redéfinir sa propre notion de plateau.
+- **Le document de contenu annonce 25 briques, il en contient 21.** Le brief structurel dit « ~25 »,
+  et sa grille en liste exactement 21 — les deux documents concordent brique par brique. C'est le
+  récapitulatif de `BRIQUES_CONSEIL_REDIGEES.md` qui est faux, pas le contenu. Les 21 sont
+  intégrées.
+- **Aucune brique protéines pour les régimes `flexitarian` et `pescatarian`.** Ces profils ne
+  reçoivent donc aucun conseil sur ce thème. Le moteur préfère se taire plutôt que de servir un
+  texte pensé pour quelqu'un d'autre ; deux variantes à rédiger combleraient le trou.
+- **Le rappel de pesée ne sera presque jamais le conseil du jour.** Sa priorité (45) le place
+  derrière `understanding_deficit__weight_loss` (60), qui s'applique en permanence à tout profil en
+  perte. Il reste visible dans la section conseils. À revoir si l'intention était d'en faire une
+  relance.
+- **Les signaux de risque n'ont aucune source de données.** `detectRiskSignals` existe depuis la
+  Phase 1 et dispose maintenant de messages et d'une surface d'affichage, mais il lui faut un
+  historique des objectifs successifs qu'aucune table ne conserve. À prévoir avec la Phase 9
+  (synchro) ou plus tôt si le sujet est jugé prioritaire.
+- **Seuils inventés faute de spécification.** Ni le brief ni la spec ne définissaient « écart
+  récent » ni « nouvel utilisateur ». Retenus : dépassement de 25 % du budget sur les deux derniers
+  jours, et sept jours d'ancienneté. Documentés et isolés dans `domain/advice/context.ts`.
 
-**Points d'attention connus :**
+---
 
-- Le seuil de notification adaptatif (50 kcal) reste franchi rarement — environ une annonce tous les 7 kg sur un profil type, l'objectif bougeant bien moins vite que le TDEE. C'est conforme à l'intention « pas de micro-ajustements », et l'écart non annoncé est désormais borné par construction (voir la décision sur la dérive silencieuse). À revoir seulement si les tests utilisateurs trouvent le rythme d'annonces trop espacé.
-- La notification d'ajustement n'est affichée qu'au moment de la pesée : fermer l'app avant de la lire la fait disparaître. Un vrai centre de notifications relève de la Phase 6 ou 10.
+## Prochaine étape : Phase 7 — Recettes
+
+Le contenu est prêt (22 recettes + table d'ingrédients dans `files/RECETTES_REDIGEES.md`). Le
+filtrage par régime, allergies et aliments détestés s'appuiera sur les mêmes champs de profil que
+les tags de conseil.
+
+**Rappel de la liste d'actions ci-dessus :** vérifier les valeurs nutritionnelles des recettes avec
+la base Ciqual au moment de l'intégration.

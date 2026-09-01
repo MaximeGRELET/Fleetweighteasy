@@ -2,14 +2,16 @@ import { Redirect, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DailyAdvice } from '@/components/advice/daily-advice';
 import { DevPanel } from '@/components/dev/dev-panel';
 import { BudgetCard } from '@/components/journal/budget-card';
 import { MealSection } from '@/components/journal/meal-section';
 import { Button, Text } from '@/components/ui';
 import type { MealType } from '@/domain/journal/types';
+import { useAdvice } from '@/hooks/use-advice';
 import { useDailyBudget } from '@/hooks/use-daily-budget';
 import { useJournal } from '@/hooks/use-journal';
-import { useHasCompletedOnboarding } from '@/hooks/use-profile';
+import { useCaloriePlan, useHasCompletedOnboarding, useStoredProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { ODBL_ATTRIBUTION } from '@/lib/attribution';
 import { formatIsoDate } from '@/lib/format';
@@ -48,6 +50,10 @@ function TodayScreen() {
   const journal = useJournal(selectedDate);
   const budget = useDailyBudget(selectedDate);
 
+  const profile = useStoredProfile();
+  const plan = useCaloriePlan(profile);
+  const advice = useAdvice();
+
   function goToSearch(mealType: MealType) {
     router.push({ pathname: '/food/search', params: { mealType } });
   }
@@ -75,6 +81,10 @@ function TodayScreen() {
             </Text>
           )}
 
+          {advice && plan ? (
+            <DailyAdvice selection={advice} target={plan.target} testID="today-advice" />
+          ) : null}
+
           <View style={styles.actions}>
             <Button
               label="Chercher un aliment"
@@ -92,6 +102,12 @@ function TodayScreen() {
               variant="secondary"
               onPress={() => router.push('/weight')}
               testID="today-weight"
+            />
+            <Button
+              label="Mes conseils"
+              variant="secondary"
+              onPress={() => router.push('/advice')}
+              testID="today-advice-link"
             />
           </View>
 

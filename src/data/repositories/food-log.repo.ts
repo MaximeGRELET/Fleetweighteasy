@@ -32,6 +32,15 @@ export interface FoodLogRepository {
   remove(id: string): void;
   /** Totaux du jour, sommés depuis les snapshots. */
   getDailyTotals(date: string): DailyTotals;
+  /**
+   * Date de la toute première entrée, ou `undefined` si le journal est vide.
+   *
+   * Sert au moteur de conseils à savoir depuis quand la personne utilise
+   * l'application — une information qu'aucun calcul ne peut deviner, et qu'on
+   * lit ici plutôt que de charger tout l'historique pour n'en garder qu'une
+   * ligne.
+   */
+  getFirstEntryDate(): string | undefined;
 }
 
 export function createFoodLogRepository(context: RepositoryContext): FoodLogRepository {
@@ -110,6 +119,17 @@ export function createFoodLogRepository(context: RepositoryContext): FoodLogRepo
         tx.delete(foodLogEntry).where(eq(foodLogEntry.id, id)).run();
         markDeleted(tx, 'food_log_entry', id, at);
       });
+    },
+
+    getFirstEntryDate() {
+      const row = db
+        .select({ date: foodLogEntry.date })
+        .from(foodLogEntry)
+        .orderBy(asc(foodLogEntry.date))
+        .limit(1)
+        .get();
+
+      return row?.date;
     },
 
     getDailyTotals(date) {

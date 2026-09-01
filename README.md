@@ -248,6 +248,47 @@ statistique appliquée à un individu — au moins autant qu'au comportement de 
 plateau est présenté comme une étape banale, et une perte trop rapide comme un signal de santé
 plutôt que comme une performance.
 
+## Moteur de conseils
+
+Ce qui distingue l'app d'un compteur : elle explique. Un socle de 21 briques rédigées, 15 thèmes,
+assemblés par un moteur déterministe — mêmes profil et contexte, mêmes conseils.
+
+**Les chiffres viennent des formules, le texte vient des briques, et les deux ne se croisent
+jamais.** Aucune brique ne contient « ton objectif est 1 800 kcal » : elle expliquerait un chiffre
+devenu faux à la première variation de poids. Un test balaie tout le contenu à la recherche d'un
+nombre suivi d'une unité nutritionnelle.
+
+**La sélection est une donnée, pas du code.** Chaque brique porte des `tags` (profil) et une
+`condition` (situation) ; le moteur garde celles dont **tous** les tags correspondent, évalue la
+condition, puis n'en retient qu'une par thème — la plus prioritaire
+([engine.ts](src/domain/advice/engine.ts)). Ajouter une variante ne demande aucune modification du
+moteur.
+
+**Une mise en garde de santé passe toujours devant un conseil.** Quand un garde-fou est actif —
+plancher calorique appliqué, poids cible sous le seuil sain, signal de risque — il occupe le
+conseil du jour et les briques passent en dessous. Le moteur ne rédige aucune de ces mises en
+garde : il désigne un drapeau, que [lib/messages/safety.ts](src/lib/messages/safety.ts) traduit —
+le module qui sert déjà à l'onboarding. Sans cette indirection, la même mise en garde existerait
+en deux exemplaires, et le jour où l'une serait corrigée, l'autre mentirait.
+
+**Un thème appartient à un seul écran.** Le plateau est expliqué par l'écran de suivi du poids
+depuis la Phase 5, chiffres à l'appui ; le moteur s'en abstient
+([`TOPICS_OWNED_ELSEWHERE`](src/domain/advice/rules.ts)). La brique reste écrite et validée — c'est
+le filtre qu'il faudra retirer le jour où le produit voudra l'inverse, pas le texte à réécrire.
+
+**L'ordre ne dépend jamais de l'ordre de déclaration.** Deux thèmes ne partagent jamais une
+priorité, invariant vérifié sur le contenu lui-même : insérer une brique ne peut donc pas changer
+silencieusement le conseil de quelqu'un.
+
+### Ton, et ce qui le garantit
+
+Les briques sont soumises aux mêmes contrôles que les messages de sécurité : aucune formulation
+proscrite (compensation punitive, jeûne, « tricher », « mauvais aliment »), la faim intense
+présentée comme un signal de manger, et l'interdiction explicite de compenser un écart. Les trois
+briques sensibles — plateau, reprise après écart, faim et satiété — sont recensées dans
+`SENSITIVE_BLOCK_IDS` et **doivent être revalidées par un professionnel de santé** avant la
+production.
+
 ## Documentation
 
 La planification complète vit dans [`files/`](files/) — point d'entrée :

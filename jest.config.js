@@ -41,6 +41,15 @@ module.exports = {
       functions: 100,
       lines: 100,
     },
+    // Moteur de conseils : la sélection décide de ce qui s'affiche, dont les
+    // mises en garde de santé. Un chemin non couvert, c'est un conseil qui ne
+    // sort jamais — le mode de panne le plus discret qui soit.
+    'src/domain/advice/**/*.ts': {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+    },
     // Suivi du poids : la moyenne mobile, le rythme réel et la détection de
     // plateau décident de ce qui est annoncé à l'utilisateur sur sa santé.
     'src/domain/progress/**/*.ts': {
