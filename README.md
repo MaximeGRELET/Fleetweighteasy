@@ -9,7 +9,8 @@ accompagnement sportif.
 ## Stack
 
 React Native + Expo (SDK 57) · TypeScript strict · Expo Router · Drizzle / SQLite ·
-TanStack Query · expo-camera · Jest / jest-expo · ESLint + Prettier + Husky · Sentry + PostHog.
+TanStack Query · expo-camera · react-native-svg · Jest / jest-expo · ESLint + Prettier + Husky ·
+Sentry + PostHog.
 
 ## Démarrer
 
@@ -193,6 +194,51 @@ production a besoin du plugin déclaré dans `app.json`, qui porte le texte d'au
 désactive la permission micro (le scan ne capte pas de son). En test, la caméra est remplacée par
 [tests/support/camera-mock.tsx](tests/support/camera-mock.tsx) : tout ce qui suit la lecture est
 éprouvé sans appareil, et **aucun test n'atteint le réseau**.
+
+## Suivi du poids et progression
+
+Se peser, voir la tendance, et laisser les objectifs suivre le corps. Quatre décisions
+structurent cette partie, et toutes découlent du même souci : le poids est une donnée
+anxiogène, et l'app ne doit pas amplifier le bruit qu'elle affiche.
+
+**La tendance est la donnée principale ; les pesées brutes sont le second plan.** Le poids varie
+d'un à deux kilos d'un jour à l'autre sans qu'aucune graisse n'ait bougé. La courbe trace donc
+une moyenne mobile en trait plein et coloré, et les points bruts en gris effacé
+([weight-chart.tsx](src/components/charts/weight-chart.tsx)). La fenêtre de lissage est exprimée
+en **jours**, pas en nombre de pesées : une moyenne sur les sept dernières _pesées_ couvrirait
+sept semaines chez quelqu'un qui se pèse le dimanche, et la tendance affichée retarderait d'un
+mois et demi.
+
+**Le rythme réel vient d'une régression, pas d'une soustraction.** Comparer la première et la
+dernière pesée d'une période ferait dépendre tout le bilan de deux journées prises au hasard.
+[rate.ts](src/domain/progress/rate.ts) ajuste une droite sur l'ensemble des points, ce qui rend
+l'indicateur robuste à une pesée aberrante — et rend la détection de plateau possible, un plateau
+étant une pente nulle et non deux nombres égaux. Aucun rythme n'est annoncé avant quatorze jours
+de recul : ne rien dire est plus juste que dire trop tôt.
+
+**Le recalcul adaptatif réaligne souvent et prévient rarement.** Il porte sur le poids **lissé**,
+jamais sur la dernière pesée — sinon une journée salée déplacerait l'objectif calorique du
+lendemain. Le profil suit dès un demi-kilo d'écart, pour que les chiffres restent justes ; mais
+l'utilisateur n'est prévenu que si l'objectif bouge d'au moins 50 kcal
+([adaptive.ts](src/domain/progress/adaptive.ts)). Cette discrétion ne contredit pas la règle
+« aucun ajustement silencieux » : `recalculateForNewWeight` force la notification dès qu'un
+garde-fou apparaît qui n'était pas déjà actif, et un plancher calorique qui se déclenche est donc
+toujours annoncé, quel que soit l'écart en kcal.
+
+**Le statut de progression est classé par le domaine, mis en mots par la couche message.**
+[assessment.ts](src/domain/progress/assessment.ts) range la situation en un statut unique —
+plateau, rythme tenu, plus lent que prévu, reprise, perte non planifiée, ou perte plus rapide que
+le plafond de sécurité, ce dernier primant sur tous les autres. C'est ce statut que consommera le
+moteur de conseils de la Phase 6 : la définition d'un plateau vit à un seul endroit.
+
+### Ton
+
+Les textes de [progress.ts](src/lib/messages/progress.ts) sont soumis à un test de vocabulaire :
+aucun message ne peut contenir de formulation culpabilisante. Un rythme plus lent que prévu est
+attribué à l'imprécision du modèle — la dépense énergétique est estimée par une formule
+statistique appliquée à un individu — au moins autant qu'au comportement de la personne. Un
+plateau est présenté comme une étape banale, et une perte trop rapide comme un signal de santé
+plutôt que comme une performance.
 
 ## Documentation
 

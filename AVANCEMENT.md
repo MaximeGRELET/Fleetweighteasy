@@ -1,7 +1,7 @@
 # État d'avancement — Application d'accompagnement à la perte de poids
 
 > Document de suivi. Mis à jour au fil des phases.
-> **Dernière mise à jour :** fin Phase 4 (journal + Open Food Facts), validée sur appareil.
+> **Dernière mise à jour :** fin Phase 5 (suivi du poids & progression). Phase 4 commitée.
 
 ---
 
@@ -66,6 +66,18 @@
 - Caméra confirmée présente dans Expo Go SDK 57 (pas de development build nécessaire).
 - **Validé sur appareil** : scan, recherche par nom, ajout au journal, comportement offline.
 
+### Phase 5 — Suivi du poids & progression
+
+- Domaine `progress/` pur et testé à 100 % (branches comprises) : arithmétique de dates, moyenne mobile, rythme réel, statut de progression, politique de recalcul adaptatif.
+- **Moyenne mobile en jours, pas en nombre de pesées** : une pesée hebdomadaire et une pesée quotidienne donnent la même échelle de temps.
+- **Rythme réel par régression linéaire** — robuste à une pesée aberrante, et c'est ce qui rend le plateau détectable. Rien n'est annoncé sous 14 jours de recul.
+- **Détection de plateau** prête pour la Phase 6 : statut unique exposé par `assessProgress`, seuils à 3 semaines / 4 pesées / quart du rythme visé.
+- **Recalcul adaptatif branché sur le poids lissé**, jamais sur la dernière pesée. Réalignement du profil dès 0,5 kg, notification seulement au-delà de 50 kcal — sauf garde-fou nouvellement déclenché, toujours annoncé.
+- Courbe `react-native-svg` (incluse dans Expo Go, pas de development build) : tendance en trait plein, points bruts effacés à 35 % d'opacité.
+- Test de vocabulaire sur les messages : aucune formulation culpabilisante ne peut passer.
+- Sélecteur de période avec rôle d'accessibilité `radio` (et non `checkbox`) — la dette signalée plus bas n'a pas été reconduite ici.
+- 820 tests au vert, lint et typecheck propres. Bundle Android vérifié via Metro.
+
 ---
 
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
@@ -87,27 +99,22 @@
 
 ---
 
-## Prochaine étape : Phase 5 — Suivi du poids & progression
+## À valider sur appareil (Phase 5)
 
-**Objectif :** suivre le poids dans le temps, sereinement, et déclencher le recalcul adaptatif des objectifs.
-
-**Points clés de la spec (PHASES_2_A_5.md §Phase 5) :**
-
-- Saisie du poids (une pesée par jour, déjà prévue au schéma).
-- **Courbe lissée** (moyenne mobile) en plus des points bruts — santé mentale : montrer la tendance, pas la fluctuation quotidienne anxiogène.
-- Indicateurs : variation sur la période, progression vers le cible, rythme réel vs visé.
-- **Recalcul adaptatif** (domaine, déjà spécifié Phase 1 §8) : recalcule BMR/TDEE/objectif quand le poids évolue, ne notifie qu'au-delà d'un seuil (éviter les micro-ajustements), explique l'ajustement.
-- **Détection de plateau** : prépare le déclenchement de la brique de conseil « plateau » en Phase 6.
-- Ton encourageant et factuel, jamais culpabilisant.
-- Calculs (moyenne mobile, plateau, rythme réel) dans le domaine, purs et testés.
-
-**Ce qui relie déjà cette phase au reste :** le champ `weight_entry` existe (Phase 2), le recalcul adaptatif est spécifié (Phase 1), et la détection de plateau alimentera le moteur de conseils (Phase 6). C'est une phase de cohérence, pas de nouvelles fondations.
+- [ ] Saisir une pesée, la corriger le même jour, vérifier qu'il n'y en a qu'une.
+- [ ] Vérifier que la courbe se lit bien sur écran de téléphone (contraste de la ligne face aux points, lisibilité des dates).
+- [ ] Vérifier le comportement en thème sombre.
+- [ ] Saisir assez de pesées pour déclencher un recalcul notifié, et lire le message d'ajustement.
 
 ---
 
-## Avant de lancer la Phase 5
+## Prochaine étape : Phase 6 — Moteur de conseils
 
-- [x] **Commiter la Phase 4** — commitée après passage au vert de la suite complète (666 tests, lint, typecheck).
-- [x] Confirmer que la recherche par nom (Search-a-licious) a bien renvoyé des résultats cohérents sur appareil — **confirmé**.
+Le contenu est prêt (25 briques rédigées dans `files/BRIQUES_CONSEIL_REDIGEES.md`). Le point
+d'ancrage technique existe désormais : `assessProgress` expose un statut de progression unique,
+dont `plateau`, que le moteur consommera sans redéfinir sa propre notion de plateau.
 
-Les deux points sont faits : la Phase 5 peut démarrer.
+**Points d'attention connus :**
+
+- Le seuil de notification adaptatif (50 kcal) est franchi assez rarement : le rythme visé étant proportionnel au poids, le déficit se resserre en même temps que la dépense, et l'objectif bouge bien moins vite que le TDEE (mesuré : −73 kcal pour 10 kg perdus sur un profil type). C'est conforme à l'intention « pas de micro-ajustements », mais à revoir si les tests utilisateurs le trouvent trop silencieux.
+- La notification d'ajustement n'est affichée qu'au moment de la pesée : fermer l'app avant de la lire la fait disparaître. Un vrai centre de notifications relève de la Phase 6 ou 10.

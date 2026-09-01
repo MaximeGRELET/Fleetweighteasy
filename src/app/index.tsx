@@ -87,6 +87,12 @@ function TodayScreen() {
               onPress={() => router.push('/meals')}
               testID="today-meals"
             />
+            <Button
+              label="Suivi du poids"
+              variant="secondary"
+              onPress={() => router.push('/weight')}
+              testID="today-weight"
+            />
           </View>
 
           <View style={styles.sections}>

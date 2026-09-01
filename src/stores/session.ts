@@ -36,12 +36,22 @@ export interface SessionState {
    * en rendus évités, c'est-à-dire rien à cette échelle.
    */
   journalRevision: number;
+  /**
+   * Jeton d'invalidation des pesées.
+   *
+   * Distinct de `journalRevision` — et c'est le seul cas qui le justifie : le
+   * poids ne bouge pas en même temps que le journal, alors qu'une pesée
+   * déclenche, elle, le recalcul adaptatif du profil. Les mêler ferait relire
+   * tout le journal à chaque pesée, et inversement.
+   */
+  weightRevision: number;
 
   setSelectedDate: (date: string) => void;
   toggleMealType: (mealType: MealType) => void;
   setDatabaseReady: (ready: boolean) => void;
   bumpProfileRevision: () => void;
   bumpJournalRevision: () => void;
+  bumpWeightRevision: () => void;
   reset: () => void;
 }
 
@@ -59,6 +69,7 @@ const initialState = {
   databaseReady: false,
   profileRevision: 0,
   journalRevision: 0,
+  weightRevision: 0,
 } satisfies Omit<
   SessionState,
   | 'setSelectedDate'
@@ -66,6 +77,7 @@ const initialState = {
   | 'setDatabaseReady'
   | 'bumpProfileRevision'
   | 'bumpJournalRevision'
+  | 'bumpWeightRevision'
   | 'reset'
 >;
 
@@ -84,6 +96,8 @@ export const useSessionStore = create<SessionState>((set) => ({
   bumpProfileRevision: () => set((state) => ({ profileRevision: state.profileRevision + 1 })),
 
   bumpJournalRevision: () => set((state) => ({ journalRevision: state.journalRevision + 1 })),
+
+  bumpWeightRevision: () => set((state) => ({ weightRevision: state.weightRevision + 1 })),
 
   reset: () => set({ ...initialState, selectedDate: todayIsoDate() }),
 }));

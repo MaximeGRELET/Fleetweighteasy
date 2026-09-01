@@ -41,6 +41,14 @@ module.exports = {
       functions: 100,
       lines: 100,
     },
+    // Suivi du poids : la moyenne mobile, le rythme réel et la détection de
+    // plateau décident de ce qui est annoncé à l'utilisateur sur sa santé.
+    'src/domain/progress/**/*.ts': {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+    },
     // Modèle et validation du profil : mêmes enjeux que les formules.
     'src/domain/profile/**/*.ts': {
       statements: 100,
