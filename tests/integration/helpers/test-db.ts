@@ -66,11 +66,60 @@ export function createTestDatabase(options: TestDatabaseOptions = {}): TestDatab
   };
 }
 
+/**
+ * Accès au pilote sous-jacent, pour les rares vérifications qui doivent
+ * observer la base **hors** de Drizzle : recensement des tables, comptage brut.
+ * Un test qui affirme « toutes les tables sont vides » ne peut pas se fier au
+ * schéma TypeScript, sinon il ne verrait jamais une table qu'on aurait oubliée.
+ */
+function client(database: TestDatabase): BetterSqlite3.Database {
+  return (database.context.db as unknown as { $client: BetterSqlite3.Database }).$client;
+}
+
 /** Nom des tables présentes dans la base, hors tables internes de SQLite. */
 export function listTableNames(database: TestDatabase): string[] {
-  const rows = (database.context.db as unknown as { $client: BetterSqlite3.Database }).$client
+  const rows = client(database)
     .prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%'")
     .all() as { name: string }[];
 
   return rows.map((row) => row.name).sort();
+}
+
+/**
+ * Table interne de Drizzle : elle recense les migrations déjà appliquées et ne
+ * fait donc pas partie des données applicatives. La vider ferait rejouer les
+ * migrations sur des tables existantes, et l'app ne s'ouvrirait plus.
+ */
+export const DRIZZLE_MIGRATIONS_TABLE = '__drizzle_migrations';
+
+/** Nom des tables applicatives, hors table de migrations Drizzle. */
+export function listAppTableNames(database: TestDatabase): string[] {
+  return listTableNames(database).filter((name) => name !== DRIZZLE_MIGRATIONS_TABLE);
+}
+
+/** Nombre de lignes d'une table, nommée en dur par l'appelant. */
+export function countRows(database: TestDatabase, table: string): number {
+  const row = client(database).prepare(`select count(*) as total from "${table}"`).get() as {
+    total: number;
+  };
+
+  return row.total;
+}
+
+/**
+ * Nombre de lignes de chaque table applicative.
+ *
+ * Volontairement recensé depuis `sqlite_master` plutôt que depuis une liste
+ * écrite à la main : une table ajoutée par une future migration apparaît ici
+ * d'elle-même, et les tests qui s'appuient sur ce recensement échouent tant
+ * qu'elle n'a pas été prise en compte.
+ */
+export function countRowsByTable(database: TestDatabase): Record<string, number> {
+  const counts: Record<string, number> = {};
+
+  for (const name of listAppTableNames(database)) {
+    counts[name] = countRows(database, name);
+  }
+
+  return counts;
 }

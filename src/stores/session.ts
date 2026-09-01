@@ -25,11 +25,23 @@ export interface SessionState {
    * d'invalidation de cache — sans jamais dupliquer la donnée hors de SQLite.
    */
   profileRevision: number;
+  /**
+   * Jeton d'invalidation du contenu du jour : journal, séances, repas
+   * prédéfinis et cache d'aliments.
+   *
+   * Même rôle que `profileRevision`, sur un autre périmètre. Un seul jeton pour
+   * ces quatre-là, et non un par table : ils changent presque toujours ensemble
+   * — ajouter une entrée de journal met aussi à jour le cache de l'aliment — et
+   * une granularité plus fine coûterait en complexité ce qu'elle ferait gagner
+   * en rendus évités, c'est-à-dire rien à cette échelle.
+   */
+  journalRevision: number;
 
   setSelectedDate: (date: string) => void;
   toggleMealType: (mealType: MealType) => void;
   setDatabaseReady: (ready: boolean) => void;
   bumpProfileRevision: () => void;
+  bumpJournalRevision: () => void;
   reset: () => void;
 }
 
@@ -46,9 +58,15 @@ const initialState = {
   expandedMealType: undefined,
   databaseReady: false,
   profileRevision: 0,
+  journalRevision: 0,
 } satisfies Omit<
   SessionState,
-  'setSelectedDate' | 'toggleMealType' | 'setDatabaseReady' | 'bumpProfileRevision' | 'reset'
+  | 'setSelectedDate'
+  | 'toggleMealType'
+  | 'setDatabaseReady'
+  | 'bumpProfileRevision'
+  | 'bumpJournalRevision'
+  | 'reset'
 >;
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -64,6 +82,8 @@ export const useSessionStore = create<SessionState>((set) => ({
   setDatabaseReady: (databaseReady) => set({ databaseReady }),
 
   bumpProfileRevision: () => set((state) => ({ profileRevision: state.profileRevision + 1 })),
+
+  bumpJournalRevision: () => set((state) => ({ journalRevision: state.journalRevision + 1 })),
 
   reset: () => set({ ...initialState, selectedDate: todayIsoDate() }),
 }));

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 
+import { DevPanel } from '@/components/dev/dev-panel';
 import { StepScreen } from '@/components/onboarding/step-screen';
 import { Text } from '@/components/ui';
 import { appInfo } from '@/lib/app-info';
@@ -26,6 +27,11 @@ export default function WelcomeScreen() {
         Tes chiffres viennent de formules scientifiques référencées, pas d’estimations au doigt
         mouillé — et tu pourras toujours voir d’où ils sortent.
       </Text>
+
+      {/* Aussi ici, et pas seulement sur l'écran du jour : le consentement est
+          persisté dès le deuxième écran, donc rejouer le parcours depuis le
+          début suppose de pouvoir l'effacer sans avoir à le terminer. */}
+      {__DEV__ ? <DevPanel /> : null}
     </StepScreen>
   );
 }

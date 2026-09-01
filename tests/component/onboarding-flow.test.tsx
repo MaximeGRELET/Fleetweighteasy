@@ -163,7 +163,7 @@ describe('aiguillage racine', () => {
     const screen = await harness.renderScreen(<RootScreen />);
 
     expect(screen.queryByTestId('redirect')).toBeNull();
-    expect(screen.getByTestId('today-target')).toBeTruthy();
+    expect(screen.getByTestId('today-budget')).toBeTruthy();
   });
 
   it('recalcule les chiffres depuis le profil, sans les relire en base', async () => {
@@ -175,7 +175,8 @@ describe('aiguillage racine', () => {
     const expected = profile ? buildCaloriePlan(profile) : undefined;
     const screen = await harness.renderScreen(<RootScreen />);
 
-    expect(screen.getByTestId('today-target').props.children).toBe(
+    // Journal vide : le restant vaut exactement l'objectif calculé.
+    expect(screen.getByTestId('budget-remaining').props.children).toBe(
       formatKcal(expected?.target.targetKcal ?? 0),
     );
   });
@@ -186,7 +187,7 @@ describe('aiguillage racine', () => {
     await fireEvent.press(onboarding.getByTestId('step-primary'));
 
     const before = await harness.renderScreen(<RootScreen />);
-    const targetBefore = before.getByTestId('today-target').props.children;
+    const targetBefore = before.getByTestId('budget-remaining').props.children;
 
     const stored = harness.repositories.profile.get();
     if (stored) {
@@ -195,6 +196,6 @@ describe('aiguillage racine', () => {
 
     const after = await harness.renderScreen(<RootScreen />);
 
-    expect(after.getByTestId('today-target').props.children).not.toBe(targetBefore);
+    expect(after.getByTestId('budget-remaining').props.children).not.toBe(targetBefore);
   });
 });

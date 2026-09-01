@@ -2,6 +2,7 @@ import { createConsentRepository, type ConsentRepository } from './consent.repo'
 import type { RepositoryContext } from './context';
 import { createFoodLogRepository, type FoodLogRepository } from './food-log.repo';
 import { createFoodRepository, type FoodRepository } from './food.repo';
+import { createMaintenanceRepository, type MaintenanceRepository } from './maintenance.repo';
 import { createMealRepository, type MealRepository } from './meal.repo';
 import { createProfileRepository, type ProfileRepository } from './profile.repo';
 import { createWeightRepository, type WeightRepository } from './weight.repo';
@@ -22,6 +23,8 @@ export interface Repositories {
   foodLog: FoodLogRepository;
   weight: WeightRepository;
   workout: WorkoutRepository;
+  /** Opérations transverses : effacement complet des données locales. */
+  maintenance: MaintenanceRepository;
 }
 
 export function createRepositories(context: RepositoryContext): Repositories {
@@ -33,5 +36,6 @@ export function createRepositories(context: RepositoryContext): Repositories {
     foodLog: createFoodLogRepository(context),
     weight: createWeightRepository(context),
     workout: createWorkoutRepository(context),
+    maintenance: createMaintenanceRepository(context),
   };
 }

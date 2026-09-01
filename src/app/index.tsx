@@ -1,12 +1,20 @@
-import { Redirect } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Redirect, useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Text } from '@/components/ui';
-import { useCaloriePlan, useHasCompletedOnboarding, useStoredProfile } from '@/hooks/use-profile';
+import { DevPanel } from '@/components/dev/dev-panel';
+import { BudgetCard } from '@/components/journal/budget-card';
+import { MealSection } from '@/components/journal/meal-section';
+import { Button, Text } from '@/components/ui';
+import type { MealType } from '@/domain/journal/types';
+import { useDailyBudget } from '@/hooks/use-daily-budget';
+import { useJournal } from '@/hooks/use-journal';
+import { useHasCompletedOnboarding } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
-import { formatGrams, formatKcal } from '@/lib/format';
+import { ODBL_ATTRIBUTION } from '@/lib/attribution';
+import { formatIsoDate } from '@/lib/format';
 import { HEALTH_DISCLAIMER } from '@/lib/legal';
+import { useSessionStore } from '@/stores/session';
 
 /**
  * Aiguillage racine.
@@ -25,48 +33,101 @@ export default function RootScreen() {
 }
 
 /**
- * Tableau du jour, réduit à l'essentiel en attendant le journal (Phase 4).
+ * Tableau du jour.
  *
- * Les chiffres affichés sont **recalculés** depuis le profil à chaque rendu :
- * rien n'est stocké figé, donc rien ne peut devenir périmé.
+ * Entièrement local : budget, journal et totaux se lisent en base, sans un seul
+ * appel réseau. Cet écran s'ouvre donc à l'identique en avion — ce qui est la
+ * condition pour que le reste de l'app puisse se permettre de dépendre du
+ * réseau (PHASES_2_A_5 §4.7).
  */
 function TodayScreen() {
   const theme = useTheme();
-  const profile = useStoredProfile();
-  const plan = useCaloriePlan(profile);
+  const router = useRouter();
+  const selectedDate = useSessionStore((state) => state.selectedDate);
+
+  const journal = useJournal(selectedDate);
+  const budget = useDailyBudget(selectedDate);
+
+  function goToSearch(mealType: MealType) {
+    router.push({ pathname: '/food/search', params: { mealType } });
+  }
+
+  function goToEdit(entryId: string) {
+    router.push({ pathname: '/food/add', params: { entryId } });
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <SafeAreaView style={[styles.content, { maxWidth: theme.maxContentWidth }]}>
-        <Text variant="caption" tone="textMuted">
-          Ton objectif du jour
-        </Text>
-        <Text variant="numeric" testID="today-target">
-          {plan ? formatKcal(plan.target.targetKcal) : '—'}
-        </Text>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={[styles.content, { maxWidth: theme.maxContentWidth }]}>
+          <View style={styles.heading}>
+            <Text variant="caption" tone="textMuted">
+              {formatIsoDate(selectedDate)}
+            </Text>
+            <Text variant="title">Ton journal</Text>
+          </View>
 
-        {plan ? (
-          <Text variant="caption" tone="textMuted" testID="today-macros">
-            {formatGrams(plan.macros.proteinG)} de protéines · {formatGrams(plan.macros.fatG)} de
-            lipides · {formatGrams(plan.macros.carbsG)} de glucides
+          {budget ? (
+            <BudgetCard budget={budget} testID="today-budget" />
+          ) : (
+            <Text variant="body" tone="textMuted">
+              Ton objectif se calcule à partir de ton profil.
+            </Text>
+          )}
+
+          <View style={styles.actions}>
+            <Button
+              label="Chercher un aliment"
+              onPress={() => router.push('/food/search')}
+              testID="today-search"
+            />
+            <Button
+              label="Mes repas"
+              variant="secondary"
+              onPress={() => router.push('/meals')}
+              testID="today-meals"
+            />
+          </View>
+
+          <View style={styles.sections}>
+            {journal.sections.map((section) => (
+              <MealSection
+                key={section.mealType}
+                mealType={section.mealType}
+                entries={section.entries}
+                kcal={section.kcal}
+                onAdd={goToSearch}
+                onEditEntry={goToEdit}
+                onRemoveEntry={journal.removeEntry}
+                testID={`section-${section.mealType}`}
+              />
+            ))}
+          </View>
+
+          <Text variant="caption" tone="textMuted" style={styles.note} testID="odbl-attribution">
+            {ODBL_ATTRIBUTION}
           </Text>
-        ) : null}
 
-        <Text variant="body" tone="textMuted" style={styles.pending}>
-          Le journal alimentaire, les conseils et le suivi sportif arrivent dans les prochaines
-          étapes de construction.
-        </Text>
+          <Text variant="caption" tone="textMuted" style={styles.note}>
+            {HEALTH_DISCLAIMER}
+          </Text>
 
-        <Text variant="caption" tone="textMuted" style={styles.pending}>
-          {HEALTH_DISCLAIMER}
-        </Text>
+          {/* `__DEV__` est un littéral : le minifieur supprime cette branche du
+              build de production, le panneau n'y est donc même pas monté. */}
+          {__DEV__ ? <DevPanel style={styles.devPanel} /> : null}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 24, gap: 8, alignItems: 'center' },
-  pending: { textAlign: 'center', marginTop: 16 },
+  container: { flex: 1, alignItems: 'center' },
+  safeArea: { flex: 1, width: '100%' },
+  content: { padding: 24, gap: 16, alignSelf: 'center', width: '100%' },
+  heading: { gap: 4 },
+  actions: { gap: 8 },
+  sections: { gap: 12 },
+  note: { textAlign: 'center' },
+  devPanel: { marginTop: 8 },
 });

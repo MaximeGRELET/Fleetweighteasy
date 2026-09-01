@@ -39,7 +39,14 @@
       "@sentry/react-native",
       "expo-localization",
       "expo-sqlite",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L’accès à la caméra sert uniquement à scanner les codes-barres des produits alimentaires. Aucune photo n’est enregistrée ni envoyée.",
+          "recordAudioAndroid": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

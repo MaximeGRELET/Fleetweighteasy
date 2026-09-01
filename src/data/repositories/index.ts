@@ -24,6 +24,7 @@ export type { RepositoryContext } from './context';
 export { type ConsentRecord, type ConsentRepository } from './consent.repo';
 export { type FoodLogRepository } from './food-log.repo';
 export { type FoodRepository, type NewCustomFoodItem } from './food.repo';
+export { type MaintenanceRepository } from './maintenance.repo';
 export { type MealRepository } from './meal.repo';
 export { type ProfileRepository } from './profile.repo';
 export { type WeightRepository } from './weight.repo';

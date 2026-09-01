@@ -29,11 +29,25 @@ export function Stack({ children }: { children?: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Paramètres de route observés par les écrans.
+ *
+ * Un écran atteint par navigation reçoit ses paramètres de l'URL ; en test,
+ * c'est le test qui les pose. Sans cela, impossible d'éprouver un écran de
+ * détail — il ne saurait pas de quoi il parle.
+ */
+let searchParams: Record<string, string> = {};
+
+export function setLocalSearchParams(params: Record<string, string>) {
+  searchParams = params;
+}
+
 export function useLocalSearchParams() {
-  return {};
+  return searchParams;
 }
 
 export function resetRouterMock() {
+  searchParams = {};
   routerMock.push.mockClear();
   routerMock.replace.mockClear();
   routerMock.back.mockClear();

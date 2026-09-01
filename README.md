@@ -8,14 +8,14 @@ accompagnement sportif.
 
 ## Stack
 
-React Native + Expo (SDK 57) · TypeScript strict · Expo Router · Jest / jest-expo ·
-ESLint + Prettier + Husky · Sentry + PostHog.
+React Native + Expo (SDK 57) · TypeScript strict · Expo Router · Drizzle / SQLite ·
+TanStack Query · expo-camera · Jest / jest-expo · ESLint + Prettier + Husky · Sentry + PostHog.
 
 ## Démarrer
 
 ```bash
 npm install
-cp .env.example .env   # facultatif : la télémétrie est désactivée si les clés sont vides
+cp .env.example .env   # télémétrie facultative ; voir EXPO_PUBLIC_OFF_CONTACT ci-dessous
 npm start
 ```
 
@@ -73,6 +73,26 @@ bouge pas. Les totaux du jour somment les snapshots, jamais une jointure sur les
 synchro existe. Les suppressions y laissent une pierre tombale, sans quoi elles ne pourraient
 jamais être propagées au serveur.
 
+## Outillage de développement
+
+Un panneau de debug, présent **uniquement en `__DEV__`**, expose un bouton
+« Réinitialiser les données (dev) » sur l'écran du jour et sur l'accueil de l'onboarding. Il
+efface profil, consentement, journal, poids, séances, cache d'aliments et `sync_meta`, puis
+renvoie sur l'onboarding : rejouer le parcours sur un appareil ne demande plus de désinstaller
+l'app.
+
+L'effacement passe par la couche data — `resetAllLocalData` dans
+[src/data/reset.ts](src/data/reset.ts), atteint depuis l'UI via
+`repositories.maintenance.resetAllLocalData()` — jamais par du SQL écrit dans un écran. La table
+`__drizzle_migrations` n'est pas touchée : la vider ferait rejouer les migrations sur des tables
+existantes.
+
+Trois garde-fous cumulés le tiennent hors des builds de production : le composant ne rend rien
+hors `__DEV__`, ses points d'appel sont conditionnés par le même littéral — que le minifieur
+remplace par `false`, ce qui supprime la branche — et le hook d'effacement lève une exception s'il
+est appelé ailleurs. [tests/component/dev-reset.test.tsx](tests/component/dev-reset.test.tsx) le
+vérifie dans les deux sens.
+
 ## Onboarding
 
 Le parcours vit dans [src/app/(onboarding)/](<src/app/(onboarding)/>) : accueil, consentement,
@@ -97,6 +117,82 @@ ne peut rester sans message.
 
 Le profil n'est persisté qu'au dernier écran ; les objectifs, eux, ne sont jamais stockés — ils se
 recalculent depuis le profil à chaque affichage.
+
+## Journal alimentaire et Open Food Facts
+
+Le cœur de l'usage quotidien : chercher ou scanner un aliment, l'ajouter au journal, voir son
+budget du jour. Quatre décisions structurent cette partie.
+
+**Une seule frontière avec le distant.** Toute la connaissance d'Open Food Facts vit dans
+[src/data/remote/](src/data/remote/), derrière l'interface `FoodDataSource`. Ni l'UI, ni les hooks,
+ni les repositories ne savent d'où viennent les aliments : ils voient des `FoodItem` du domaine.
+Changer de source — USDA, base maison, API commerciale — revient à écrire un fichier voisin.
+
+**Le local est la source de vérité.** `food.repo` fait foi ; le distant ne fait que l'alimenter.
+Tout produit consulté, scanné ou trouvé par recherche, est écrit en base **au moment où il est
+vu** : c'est cette base qui rend l'app utilisable hors ligne, et c'est aussi elle qui économise le
+quota d'appels. TanStack Query ne sert donc qu'au distant — cache mémoire, déduplication,
+annulation, réessais — et n'est **pas** persisté : un second cache sérialisé créerait deux vérités
+à réconcilier.
+
+**Les contraintes d'Open Food Facts sont tenues par construction, pas par discipline.**
+
+- Le **User-Agent** (nom, version, contact) est posé par [src/data/remote/http.ts](src/data/remote/http.ts),
+  seul chemin sortant : un `fetch` écrit ailleurs l'oublierait. Sans contact configuré
+  (`EXPO_PUBLIC_OFF_CONTACT`), l'app **ferme** l'accès au réseau plutôt que d'interroger OFF sous
+  une identité incomplète — le journal, les aliments maison et les repas continuent de marcher.
+- Le **throttling** est double : debounce de 400 ms sur la saisie, puis limiteur à fenêtre
+  glissante par endpoint ([throttle.ts](src/data/remote/throttle.ts)), calibré sous les quotas
+  annoncés. Un code-barres dont la clé de contrôle est fausse ne part jamais sur le réseau.
+- La **recherche textuelle** passe par Search-a-licious : l'API v2 n'a pas de plein texte
+  server-side. Le scan, lui, utilise `/api/v2/product/{code}.json` avec une liste de `fields`
+  restreinte à ce qui est affiché.
+- L'**attribution ODbL** est affichée partout où une donnée OFF apparaît.
+
+**La frontière ODbL est nette, et le reste.** Toute ligne issue d'OFF porte `source = 'off'` et un
+identifiant préfixé `off:`. Une correction utilisateur ne modifie **jamais** une ligne OFF : elle
+crée un aliment `custom` distinct. Seuls les aliments `custom` partent à la synchro serveur. Le
+raisonnement complet est dans [src/data/remote/licence.ts](src/data/remote/licence.ts) — à
+retrancher avec un conseil juridique avant tout usage commercial.
+
+### Données collaboratives, complétude variable
+
+Aucune valeur n'est inventée : un produit dont on ignore les lipides n'est pas un produit à 0 g de
+lipides. Une fiche à laquelle il manque un des quatre nutriments obligatoires est signalée comme
+**incomplète** — distincte d'un produit _inconnu_ — et ouvre la saisie manuelle **pré-remplie** de
+ce que la source savait déjà. Chaque aliment affiche son indicateur de fiabilité : `verified` n'est
+vrai que pour ce que l'utilisateur a saisi lui-même, jamais pour une donnée collaborative.
+
+### Offline-first, vérifié chemin par chemin
+
+| Chemin                                    | Sans réseau                                  |
+| ----------------------------------------- | -------------------------------------------- |
+| Tableau du jour, totaux, budget           | fonctionne — aucun appel réseau              |
+| Ajouter / corriger / supprimer une entrée | fonctionne                                   |
+| Consulter un aliment déjà en cache        | fonctionne                                   |
+| Rejouer un repas prédéfini                | fonctionne                                   |
+| Saisir un aliment maison                  | fonctionne — c'est le repli universel        |
+| Chercher ou scanner un produit jamais vu  | message clair + repli sur la saisie manuelle |
+
+Aucun écran ne reste vide ni bloqué sur un indicateur de chargement : chaque motif d'échec est
+traduit par [src/lib/messages/food-source.ts](src/lib/messages/food-source.ts) et propose au moins
+une issue. TanStack Query tourne en `networkMode: 'always'` précisément pour cela — en mode
+« online », il mettrait les requêtes en pause au lieu de les laisser échouer proprement.
+
+### Modes de calories
+
+Le tableau du jour applique le `calorieMode` du profil via `buildDailyBudget`, jamais dans l'écran.
+En mode `fixed`, une séance n'augmente pas le budget mais reste **affichée séparément** ; en mode
+`credited`, l'apport est ajouté visiblement. Les deux vues sont toujours calculées, et la vue
+alternative est accessible en un tap : c'est une comparaison, elle ne change pas le réglage.
+
+### Scan et caméra
+
+`expo-camera` est inclus dans Expo Go : le scan y fonctionne sans development build. Un build de
+production a besoin du plugin déclaré dans `app.json`, qui porte le texte d'autorisation et
+désactive la permission micro (le scan ne capte pas de son). En test, la caméra est remplacée par
+[tests/support/camera-mock.tsx](tests/support/camera-mock.tsx) : tout ce qui suit la lecture est
+éprouvé sans appareil, et **aucun test n'atteint le réseau**.
 
 ## Documentation
 
