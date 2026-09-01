@@ -56,6 +56,26 @@ describe('profileRepo', () => {
     expect('weeklyRateKg' in (reloaded ?? {})).toBe(false);
   });
 
+  /**
+   * La base de comparaison du recalcul adaptatif doit survivre au redémarrage :
+   * si elle repartait à zéro, l'écart cumulé repartirait avec elle et la dérive
+   * silencieuse reviendrait à chaque ouverture de l'app.
+   */
+  it('persiste la base d’annonce du recalcul adaptatif', () => {
+    profileRepo.save(buildStoredProfile({ currentWeightKg: 79.4, lastNotifiedWeightKg: 85 }));
+
+    expect(profileRepo.get()?.lastNotifiedWeightKg).toBe(85);
+  });
+
+  it('omet la base d’annonce tant qu’aucun objectif n’a été annoncé', () => {
+    profileRepo.save(buildStoredProfile({ lastNotifiedWeightKg: undefined }));
+
+    const reloaded = profileRepo.get();
+
+    // Absente plutôt que `null` : le domaine retombe alors sur `currentWeightKg`.
+    expect('lastNotifiedWeightKg' in (reloaded ?? {})).toBe(false);
+  });
+
   it('reste sur une seule ligne quels que soient les enregistrements successifs', () => {
     profileRepo.save(buildStoredProfile({ currentWeightKg: 72.5 }));
     database.advanceMinutes(60 * 24 * 7);

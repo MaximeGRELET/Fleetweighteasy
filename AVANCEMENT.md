@@ -73,10 +73,45 @@
 - **Rythme réel par régression linéaire** — robuste à une pesée aberrante, et c'est ce qui rend le plateau détectable. Rien n'est annoncé sous 14 jours de recul.
 - **Détection de plateau** prête pour la Phase 6 : statut unique exposé par `assessProgress`, seuils à 3 semaines / 4 pesées / quart du rythme visé.
 - **Recalcul adaptatif branché sur le poids lissé**, jamais sur la dernière pesée. Réalignement du profil dès 0,5 kg, notification seulement au-delà de 50 kcal — sauf garde-fou nouvellement déclenché, toujours annoncé.
+- **Seuil de notification mesuré depuis le dernier objectif annoncé**, et non depuis le recalcul précédent (voir la décision ci-dessous).
 - Courbe `react-native-svg` (incluse dans Expo Go, pas de development build) : tendance en trait plein, points bruts effacés à 35 % d'opacité.
 - Test de vocabulaire sur les messages : aucune formulation culpabilisante ne peut passer.
 - Sélecteur de période avec rôle d'accessibilité `radio` (et non `checkbox`) — la dette signalée plus bas n'a pas été reconduite ici.
 - 820 tests au vert, lint et typecheck propres. Bundle Android vérifié via Metro.
+
+### Décision — la dérive silencieuse du recalcul adaptatif
+
+**Problème trouvé et corrigé après la première livraison de la Phase 5.** Le seuil de notification
+de 50 kcal était appliqué de proche en proche : chaque recalcul se comparait au précédent, et le
+poids du profil — la base de comparaison — était réécrit à chaque réalignement.
+
+Le rythme visé étant proportionnel au poids, le déficit se resserre en même temps que la dépense :
+l'objectif bouge donc lentement, ~4 kcal par palier de 0,5 kg. **Mesuré sur un profil type : 10 kg
+perdus en vingt paliers déplaçaient l'objectif de 73 kcal sans déclencher une seule notification**,
+parce qu'aucun pas isolé n'atteignait le seuil. L'utilisateur aurait mangé selon un objectif
+sensiblement différent de celui qu'on lui avait annoncé, sans qu'on le lui ait jamais dit.
+
+**Correction retenue : la comparaison part du dernier objectif effectivement annoncé.** Une colonne
+`profile.last_notified_weight_kg` (migration `0002`, additive et nullable) mémorise le poids de la
+dernière annonce. Chaque évaluation recalcule l'objectif depuis ce poids-là, pas depuis le
+précédent. Après correction, le même scénario déclenche une annonce à 83 kg (2 172 → 2 121 kcal) et
+l'écart jamais annoncé reste sous 50 kcal en permanence.
+
+**Un poids, et non un nombre de kcal.** Mémoriser l'objectif annoncé le figerait sous les hypothèses
+du moment : si l'utilisateur change son niveau d'activité ou son objectif, ce nombre deviendrait
+faux et la comparaison suivante rapporterait un écart qui ne doit rien au poids. En mémorisant un
+poids, la référence est recalculée avec le profil courant — un changement de réglage déjà vu à
+l'écran ne se fait pas annoncer deux fois.
+
+**Le piège à ne pas rouvrir.** La base doit être _épinglée_ dès le premier réalignement silencieux.
+Un simple repli `?? currentWeightKg` la ferait suivre le poids fraîchement réaligné, ce qui remet
+l'écart cumulé à zéro à chaque palier et rétablit exactement la dérive. `applyAdaptiveEvaluation`
+applique le réalignement et la base ensemble, pour qu'aucun appelant ne puisse en oublier une.
+
+Couvert par `tests/unit/progress/adaptive.test.ts` (paliers cumulés à 0,5 kg et 0,2 kg, espacement
+des annonces, épinglage de la base), par un aller-retour SQLite dans
+`tests/integration/profile.repo.test.ts` — sans persistance, la dérive reviendrait à chaque
+redémarrage — et de bout en bout dans `tests/component/weight-tracking.test.tsx`.
 
 ---
 
@@ -116,5 +151,5 @@ dont `plateau`, que le moteur consommera sans redéfinir sa propre notion de pla
 
 **Points d'attention connus :**
 
-- Le seuil de notification adaptatif (50 kcal) est franchi assez rarement : le rythme visé étant proportionnel au poids, le déficit se resserre en même temps que la dépense, et l'objectif bouge bien moins vite que le TDEE (mesuré : −73 kcal pour 10 kg perdus sur un profil type). C'est conforme à l'intention « pas de micro-ajustements », mais à revoir si les tests utilisateurs le trouvent trop silencieux.
+- Le seuil de notification adaptatif (50 kcal) reste franchi rarement — environ une annonce tous les 7 kg sur un profil type, l'objectif bougeant bien moins vite que le TDEE. C'est conforme à l'intention « pas de micro-ajustements », et l'écart non annoncé est désormais borné par construction (voir la décision sur la dérive silencieuse). À revoir seulement si les tests utilisateurs trouvent le rythme d'annonces trop espacé.
 - La notification d'ajustement n'est affichée qu'au moment de la pesée : fermer l'app avant de la lire la fait disparaître. Un vrai centre de notifications relève de la Phase 6 ou 10.

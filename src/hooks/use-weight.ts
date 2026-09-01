@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 
 import {
-  applyAdaptiveWeight,
+  applyAdaptiveEvaluation,
   evaluateAdaptiveTarget,
   type AdaptiveEvaluation,
 } from '@/domain/progress/adaptive';
@@ -90,9 +90,11 @@ export function useWeightTracker(): WeightTracker {
 
       // Le profil suit le poids lissé dès qu'il a bougé d'un demi-kilo, que
       // l'utilisateur soit prévenu ou non : c'est ce qui garde l'objectif juste
-      // entre deux notifications.
+      // entre deux notifications. La même écriture déplace la base d'annonce
+      // quand une notification part — `applyAdaptiveEvaluation` s'en charge,
+      // pour qu'aucun appelant ne puisse réaligner en oubliant la base.
       if (adaptive.shouldUpdateProfile) {
-        repositories.profile.save(applyAdaptiveWeight(profile, referenceWeightKg));
+        repositories.profile.save(applyAdaptiveEvaluation(profile, adaptive));
         bumpProfile();
       }
 

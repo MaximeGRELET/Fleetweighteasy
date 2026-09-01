@@ -306,6 +306,45 @@ describe('suivi du poids', () => {
       expect(notice).toHaveTextContent(/pas que tu as fait quoi que ce soit de travers/);
     });
 
+    it('prévient sur l’écart cumulé, même quand le pas du jour est minuscule', async () => {
+      // Profil ayant dérivé en silence : l'objectif a été annoncé à 95 kg, le
+      // poids courant est descendu à 83,2 kg palier par palier. Le pas du jour
+      // (0,2 kg) est très en dessous du seuil de réalignement, mais l'écart
+      // depuis la dernière annonce, lui, dépasse largement les 50 kcal.
+      givenProfile({ currentWeightKg: 83.2, lastNotifiedWeightKg: 95 });
+      givenWeights(
+        Array.from({ length: 14 }, () => 83),
+        addDays(today, -1),
+      );
+
+      const screen = await harness.renderScreen(<WeightScreen />);
+      await fireEvent.changeText(screen.getByTestId('weight-field'), '83');
+      await fireEvent.press(screen.getByTestId('weight-field-submit'));
+
+      expect(screen.getByTestId('adaptive-adaptive_target_updated')).toBeTruthy();
+      // La base d'annonce suit, pour que le prochain cumul reparte de zéro.
+      expect(harness.repositories.profile.get()?.lastNotifiedWeightKg).toBe(83);
+    });
+
+    it('épingle la base d’annonce sans la faire suivre un réalignement silencieux', async () => {
+      givenProfile({ currentWeightKg: 83 });
+      givenWeights(
+        Array.from({ length: 14 }, () => 82.4),
+        addDays(today, -1),
+      );
+
+      const screen = await harness.renderScreen(<WeightScreen />);
+      await fireEvent.changeText(screen.getByTestId('weight-field'), '82,4');
+      await fireEvent.press(screen.getByTestId('weight-field-submit'));
+
+      const stored = harness.repositories.profile.get();
+
+      expect(screen.queryByTestId('adaptive-adaptive_target_updated')).toBeNull();
+      expect(stored?.currentWeightKg).toBeCloseTo(82.4, 1);
+      // La base reste au poids du dernier objectif montré, pas au poids réaligné.
+      expect(stored?.lastNotifiedWeightKg).toBe(83);
+    });
+
     it('ne touche à rien sous le seuil de réalignement', async () => {
       givenProfile({ currentWeightKg: 72 });
 

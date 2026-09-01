@@ -1,0 +1,1 @@
+ALTER TABLE `profile` ADD `last_notified_weight_kg` real;

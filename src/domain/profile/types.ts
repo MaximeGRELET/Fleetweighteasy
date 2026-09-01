@@ -75,6 +75,19 @@ export interface UserProfile {
 
   // Métadonnées
   onboardingCompleted: boolean;
+  /**
+   * Poids à partir duquel l'objectif calorique a été annoncé pour la dernière
+   * fois à l'utilisateur (Phase 5, recalcul adaptatif).
+   *
+   * Base de comparaison du seuil de notification. Distincte de
+   * `currentWeightKg`, qui suit le poids lissé en continu : sans cette
+   * distinction, chaque recalcul se comparerait au précédent et une perte
+   * régulière ferait dériver l'objectif sans jamais franchir le seuil.
+   *
+   * Absente tant qu'aucun réajustement n'a été annoncé : on retombe alors sur
+   * `currentWeightKg`, le poids de la restitution d'onboarding.
+   */
+  lastNotifiedWeightKg?: number;
 }
 
 /** Valeur par défaut du mode calories, exposée pour l'onboarding. */

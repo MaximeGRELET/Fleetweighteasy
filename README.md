@@ -225,6 +225,14 @@ l'utilisateur n'est prévenu que si l'objectif bouge d'au moins 50 kcal
 garde-fou apparaît qui n'était pas déjà actif, et un plancher calorique qui se déclenche est donc
 toujours annoncé, quel que soit l'écart en kcal.
 
+**Ce seuil se mesure depuis le dernier objectif annoncé, jamais depuis le recalcul précédent.** La
+distinction n'est pas théorique : le rythme visé étant proportionnel au poids, un palier de 0,5 kg
+ne déplace l'objectif que de quelques kcal. Une comparaison de proche en proche laisserait donc
+passer une perte de dix kilos — plus de 70 kcal d'écart cumulé — sans jamais franchir le seuil à un
+pas donné. La colonne `profile.last_notified_weight_kg` mémorise le poids de la dernière annonce,
+et `applyAdaptiveEvaluation` l'épingle dès le premier réalignement silencieux : la laisser suivre
+le poids courant remettrait le cumul à zéro à chaque palier et rétablirait la dérive.
+
 **Le statut de progression est classé par le domaine, mis en mots par la couche message.**
 [assessment.ts](src/domain/progress/assessment.ts) range la situation en un statut unique —
 plateau, rythme tenu, plus lent que prévu, reprise, perte non planifiée, ou perte plus rapide que

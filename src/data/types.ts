@@ -136,6 +136,9 @@ export function toUserProfile(row: ProfileRow): UserProfile {
     dislikes: parseJsonColumn(stringArraySchema, row.dislikes, 'profile.dislikes'),
     calorieMode: row.calorieMode,
     onboardingCompleted: row.onboardingCompleted,
+    ...(row.lastNotifiedWeightKg === null
+      ? {}
+      : { lastNotifiedWeightKg: row.lastNotifiedWeightKg }),
   };
 }
 
@@ -161,6 +164,7 @@ export function toProfileInsert(
     dislikes: JSON.stringify(userProfile.dislikes),
     calorieMode: userProfile.calorieMode,
     onboardingCompleted: userProfile.onboardingCompleted,
+    lastNotifiedWeightKg: userProfile.lastNotifiedWeightKg ?? null,
     createdAt: metadata.createdAt,
     updatedAt: metadata.updatedAt,
   };

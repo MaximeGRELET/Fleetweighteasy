@@ -145,10 +145,6 @@ function toStatusContext(summary: ProgressSummary): StatusContext {
  * nouveau se déclenche, et son message est ajouté ici.
  */
 export function explainAdaptiveAdjustment(evaluation: AdaptiveEvaluation): Explanation[] {
-  if (!evaluation.recalculation) {
-    return [];
-  }
-
   if (!evaluation.shouldNotifyUser) {
     return [];
   }
@@ -164,10 +160,10 @@ function buildAdaptiveExplanation(recalculation: AdaptiveRecalculationResult): E
 
   const cause =
     weightDeltaKg < 0
-      ? `Tu as perdu ${formatKg(Math.abs(weightDeltaKg))} depuis le dernier calcul. Un corps ` +
-        `plus léger dépense un peu moins d’énergie, au repos comme en mouvement.`
-      : `Ton poids a augmenté de ${formatKg(Math.abs(weightDeltaKg))} depuis le dernier calcul. ` +
-        `Un corps plus lourd dépense un peu plus d’énergie.`;
+      ? `Tu as perdu ${formatKg(Math.abs(weightDeltaKg))} depuis la dernière mise à jour de ton ` +
+        `objectif. Un corps plus léger dépense un peu moins d’énergie, au repos comme en mouvement.`
+      : `Ton poids a augmenté de ${formatKg(Math.abs(weightDeltaKg))} depuis la dernière mise à ` +
+        `jour de ton objectif. Un corps plus lourd dépense un peu plus d’énergie.`;
 
   const direction = targetDeltaKcal > 0 ? '+' : '−';
 

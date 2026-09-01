@@ -67,6 +67,20 @@ export const profile = sqliteTable(
 
     // Métadonnées
     onboardingCompleted: integer('onboarding_completed', { mode: 'boolean' }).notNull(),
+    /**
+     * Poids à partir duquel l'objectif affiché a été annoncé pour la dernière
+     * fois (Phase 5).
+     *
+     * C'est la base de comparaison du recalcul adaptatif, et elle ne peut pas
+     * être dérivée : elle dépend de l'historique des messages effectivement
+     * montrés. Sans elle, chaque recalcul se comparerait au précédent, et une
+     * perte régulière ferait dériver l'objectif de dizaines de kcal sans jamais
+     * franchir le seuil de notification à un pas donné.
+     *
+     * Nullable : un profil antérieur à cette colonne retombe sur
+     * `currentWeightKg`, qui est bien le poids de la dernière restitution.
+     */
+    lastNotifiedWeightKg: real('last_notified_weight_kg'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
