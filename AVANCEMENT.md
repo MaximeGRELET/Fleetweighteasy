@@ -18,7 +18,7 @@
 | 6     | Moteur de conseils           | ⬜ Contenu prêt (25 briques rédigées)             |
 | 7     | Recettes                     | ⬜ Contenu prêt (22 recettes + table ingrédients) |
 | 8     | Sport                        | ⬜ Données prêtes (METs + noyau exercices)        |
-| 9     | Backend & synchronisation    | ⬜ Groundwork posé (sync_meta, deletedAt)         |
+| 9     | Backend & synchronisation    | ⬜ Groundwork posé — voir dépendances d'entrée    |
 | 10    | Durcissement & mise en prod  | ⬜                                                |
 
 ---
@@ -150,6 +150,30 @@ en place_, donc plutôt rassurante. `underweight_target_requested` est masqué q
 décision prise à l'écran de réglage, où ils ont été expliqués. Les afficher chaque jour serait du
 harcèlement, ce que la spec exclut (§6.6).
 
+### Décision — le rappel de pesée est un conseil, pas une relance
+
+**Question posée en fin de Phase 6 :** `weighing_fluctuations__reminder` (priorité 45) sort rarement
+en conseil du jour, car `understanding_deficit__weight_loss` (60) s'applique en permanence à tout
+profil en perte. Fallait-il un mécanisme séparé de la priorité pour le faire remonter ?
+
+**Non.** L'intention d'origine est documentée, et quatre signaux concordent :
+
+1. **Le brief §3 énumère les conditions qui doivent primer** : « un `plateau` détecté ou un
+   `recentSlip` doit passer devant un conseil générique. Le nouvel utilisateur voit d'abord
+   `getting_started`. » Le rappel de pesée est lui aussi conditionnel, et il n'est délibérément
+   **pas** dans cette liste — l'auteur a distingué les conditions fortes du simple rappel.
+2. **Le brief §4.5 le qualifie de « rappel doux »**, « sans pression ».
+3. **Le texte rédigé dit la même chose** : « sans pression ni obsession du chiffre. Quand tu veux. »
+4. **La spec §6.6 le confirme au niveau produit** : « Ton sobre, pas de notification intrusive. Le
+   conseil s'affiche, il ne harcèle pas. »
+
+Un mécanisme de remontée forcée contredirait les quatre. **Rien à changer.**
+
+Ce que sa priorité de 45 fait réellement — et qui est son vrai rôle — c'est passer devant
+`weighing_fluctuations__default` (40) : quand la semaine s'est écoulée sans pesée, le conseil
+général sur les fluctuations est **remplacé** par le rappel. C'est vérifié par un test unitaire et
+par un test d'écran. Question close ; ne pas la rouvrir sans changer d'abord l'intention produit.
+
 ---
 
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
@@ -173,33 +197,74 @@ harcèlement, ce que la spec exclut (§6.6).
 
 ## À valider sur appareil (Phase 6)
 
-- [ ] Vérifier que le conseil du jour s'affiche sur le tableau et change avec la situation (nouvel utilisateur, écart récent).
-- [ ] Ouvrir la section conseils et vérifier la lisibilité des briques sur écran de téléphone.
-- [ ] Vérifier le thème sombre sur les deux surfaces.
-- [ ] Vérifier qu'une mise en garde de sécurité prend bien la place du conseil du jour.
+Ce qui pouvait être mécanisé l'a été ; ce qui reste demande un écran et un œil.
+
+**Déjà couvert par les tests, à ne re-vérifier que par acquit de conscience :**
+
+- Le conseil du jour change bien avec la situation — accueil du nouvel utilisateur, reprise après
+  écart, rappel de pesée (`tests/component/advice.test.tsx`).
+- Une mise en garde de sécurité prend la place du conseil du jour, et aucun conseil général ne
+  s'affiche au-dessus (même fichier).
+- Les trois écrans prennent leurs couleurs dans la palette sombre, sans couleur figée
+  (`tests/component/dark-theme.test.tsx`).
+
+**Ce qui demande réellement l'appareil :**
+
+- [ ] **Lisibilité** des briques sur écran de téléphone : longueur des textes, césures, hauteur de
+      la carte de conseil. Les tests savent qu'un texte est affiché, pas s'il se lit.
+- [ ] **Contraste réel en thème sombre**, en conditions d'éclairage variables. Les tests vérifient
+      que les bons tokens sont appliqués, pas qu'ils sont confortables.
+- [ ] **Enchaînement des surfaces** : tableau du jour → section conseils → retour, et cohérence de
+      ce qui est mis en avant entre les deux.
+- [ ] **Encombrement du tableau du jour** : le conseil s'ajoute au budget et aux quatre repas.
+      Vérifier que l'écran ne devient pas trop chargé avant le premier repas.
 
 ---
 
 ## Points relevés en Phase 6 (à arbitrer, non bloquants)
 
-- **Le document de contenu annonce 25 briques, il en contient 21.** Le brief structurel dit « ~25 »,
-  et sa grille en liste exactement 21 — les deux documents concordent brique par brique. C'est le
-  récapitulatif de `BRIQUES_CONSEIL_REDIGEES.md` qui est faux, pas le contenu. Les 21 sont
-  intégrées.
 - **Aucune brique protéines pour les régimes `flexitarian` et `pescatarian`.** Ces profils ne
   reçoivent donc aucun conseil sur ce thème. Le moteur préfère se taire plutôt que de servir un
-  texte pensé pour quelqu'un d'autre ; deux variantes à rédiger combleraient le trou.
-- **Le rappel de pesée ne sera presque jamais le conseil du jour.** Sa priorité (45) le place
-  derrière `understanding_deficit__weight_loss` (60), qui s'applique en permanence à tout profil en
-  perte. Il reste visible dans la section conseils. À revoir si l'intention était d'en faire une
-  relance.
-- **Les signaux de risque n'ont aucune source de données.** `detectRiskSignals` existe depuis la
-  Phase 1 et dispose maintenant de messages et d'une surface d'affichage, mais il lui faut un
-  historique des objectifs successifs qu'aucune table ne conserve. À prévoir avec la Phase 9
-  (synchro) ou plus tôt si le sujet est jugé prioritaire.
+  texte pensé pour quelqu'un d'autre. Tracé dans `files/BRIQUES_CONSEIL_REDIGEES.md` : **à rédiger
+  avant la Phase 10.**
 - **Seuils inventés faute de spécification.** Ni le brief ni la spec ne définissaient « écart
   récent » ni « nouvel utilisateur ». Retenus : dépassement de 25 % du budget sur les deux derniers
   jours, et sept jours d'ancienneté. Documentés et isolés dans `domain/advice/context.ts`.
+
+---
+
+## Phase 9 — Backend & synchronisation : dépendances d'entrée
+
+Points identifiés au fil des phases précédentes qui **conditionnent** la Phase 9. Ce ne sont pas
+des sujets réglés : ils attendent d'être traités ici, ou plus tôt si le besoin se précise.
+
+### `detectRiskSignals` attend un historique des objectifs successifs
+
+La détection de signaux de risque comportementaux existe depuis la **Phase 1**
+(`src/domain/nutrition/safety.ts`) : objectifs répétés sous le plancher, poids cible révisé à la
+baisse plusieurs fois, rythme systématiquement poussé au maximum. La **Phase 6** lui a donné ce qui
+lui manquait côté sortie — quatre messages rédigés dans `src/lib/messages/advice.ts`, et une place
+dans la bande de sécurité du moteur de conseils, testée de bout en bout.
+
+**Il lui manque toujours son entrée.** La fonction prend un `GoalChangeEvent[]` : l'historique des
+objectifs successivement définis par l'utilisateur. **Aucune table ne le conserve.** La table
+`profile` ne garde qu'une seule ligne, réécrite à chaque modification : changer de poids cible
+efface le précédent sans laisser de trace. Il n'y a donc aujourd'hui rien à donner à la fonction,
+et `useAdvice` lui passe une liste vide — explicitement, avec le commentaire qui l'explique.
+
+Ce qu'il faudra décider en Phase 9 (ou avant) :
+
+- **Où vit l'historique.** Une table `goal_change_event` en append-only est le candidat naturel, avec
+  son entrée `sync_meta` comme les autres.
+- **Ce qu'on y écrit.** `GoalChangeEvent` porte déjà sexe, poids courant, taille, poids cible et
+  rythme demandé **avant plafonnement** — cette dernière valeur n'est actuellement persistée nulle
+  part, alors qu'elle est ce qui permet de repérer un rythme systématiquement poussé au maximum.
+- **La rétention.** Ce sont des données de santé sensibles : leur durée de conservation et leur
+  effacement (RGPD) relèvent de la même décision que le reste de la synchro.
+
+Une fois la table en place, le branchement se réduit à une ligne dans `useAdvice` : remplacer
+`riskSignals: []` par l'appel à `detectRiskSignals`. Le reste de la chaîne est déjà écrit et
+éprouvé.
 
 ---
 

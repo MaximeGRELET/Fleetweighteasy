@@ -216,11 +216,12 @@
 
 ## Récapitulatif
 
-25 briques rédigées, couvrant 15 topics. Toutes en tutoiement, format court, ton sobre et bienveillant. Les trois briques sensibles (`plateau__default`, `recovery_after_slip__default`, `hunger_satiety__default`) appliquent les règles de sécurité du brief : pas de compensation punitive, pas de restriction sous le seuil, la faim intense présentée comme un signal de manger.
+21 briques rédigées, couvrant 15 topics. Toutes en tutoiement, format court, ton sobre et bienveillant. Les trois briques sensibles (`plateau__default`, `recovery_after_slip__default`, `hunger_satiety__default`) appliquent les règles de sécurité du brief : pas de compensation punitive, pas de restriction sous le seuil, la faim intense présentée comme un signal de manger.
 
 **Étapes suivantes :**
 - Intégration par Claude Code dans `src/domain/advice/content/` avec les `id`, `tags`, `condition` et `priority` exacts (déjà présents ci-dessus).
 - Validation des trois briques sensibles par un professionnel de santé avant la prod.
 - Enrichissement progressif (nouvelles variantes régime/objectif) au fil du temps.
+- **Trou de contenu connu :** aucune variante `protein` pour les régimes `flexitarian` et `pescatarian`. Ces profils ne reçoivent donc aucun conseil sur ce topic — le moteur préfère se taire plutôt que de servir un texte pensé pour quelqu'un d'autre. À rédiger avant la Phase 10.
 
 *Fin du contenu rédigé V1.*
