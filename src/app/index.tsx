@@ -109,6 +109,12 @@ function TodayScreen() {
               onPress={() => router.push('/advice')}
               testID="today-advice-link"
             />
+            <Button
+              label="Idées de recettes"
+              variant="secondary"
+              onPress={() => router.push('/recipes')}
+              testID="today-recipes"
+            />
           </View>
 
           <View style={styles.sections}>

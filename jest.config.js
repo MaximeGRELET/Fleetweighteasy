@@ -41,6 +41,15 @@ module.exports = {
       functions: 100,
       lines: 100,
     },
+    // Recettes : l'exclusion des allergènes est le seul filtre que la spec
+    // qualifie de non négociable. Un chemin non couvert y est un allergène
+    // potentiellement servi.
+    'src/domain/recipes/**/*.ts': {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+    },
     // Moteur de conseils : la sélection décide de ce qui s'affiche, dont les
     // mises en garde de santé. Un chemin non couvert, c'est un conseil qui ne
     // sort jamais — le mode de panne le plus discret qui soit.

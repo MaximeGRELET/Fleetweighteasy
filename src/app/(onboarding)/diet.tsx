@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { StepScreen } from '@/components/onboarding/step-screen';
 import { Button, Chip, OptionCard, Text, TextField } from '@/components/ui';
 import type { DietType } from '@/domain/profile/types';
+import { ALLERGEN_CHOICES } from '@/domain/recipes/allergens';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { nextStep, onboardingRoute, stepProgress } from '@/lib/onboarding-steps';
 
@@ -20,16 +21,16 @@ const DIETS: { value: DietType; label: string; description: string }[] = [
   { value: 'vegan', label: 'Végétalien', description: 'Aucun produit d’origine animale.' },
 ];
 
-const COMMON_ALLERGIES = [
-  'Arachide',
-  'Fruits à coque',
-  'Gluten',
-  'Lactose',
-  'Œuf',
-  'Poisson',
-  'Crustacés',
-  'Soja',
-];
+/**
+ * Allergènes proposés — le **vocabulaire exact** que le filtrage des recettes
+ * sait exclure (Phase 7).
+ *
+ * La liste vient de `ALLERGEN_CHOICES` et n'est pas recopiée ici : une puce qui
+ * ne correspondrait à aucun allergène du catalogue donnerait l'illusion d'une
+ * protection sans en offrir aucune. Le sésame, allergène réglementé présent
+ * dans le houmous, y figure désormais — il manquait aux propositions.
+ */
+const COMMON_ALLERGIES = ALLERGEN_CHOICES;
 
 const COMMON_DISLIKES = ['Coriandre', 'Champignons', 'Olives', 'Foie', 'Chou', 'Anchois'];
 
@@ -118,7 +119,8 @@ export default function DietScreen() {
               label="Autre allergie"
               value={customAllergy}
               onChangeText={setCustomAllergy}
-              placeholder="Sésame…"
+              placeholder="Kiwi…"
+              hint="Utilisée pour t’en souvenir, mais pas pour filtrer les recettes."
             />
           </View>
           <Button

@@ -289,6 +289,46 @@ briques sensibles — plateau, reprise après écart, faim et satiété — sont
 `SENSITIVE_BLOCK_IDS` et **doivent être revalidées par un professionnel de santé** avant la
 production.
 
+## Recettes
+
+Un catalogue de 22 recettes livré avec l'application, filtré sur le profil et loggeable au journal
+en un tap. Rien ne passe par le réseau : la liste s'ouvre en avion comme le reste.
+
+**Allergènes et compatibilité régime sont déduits des ingrédients, jamais saisis à la main.** Une
+liste recopiée par recette s'oublie au premier ajout — et c'est exactement ce qui était arrivé dans
+le catalogue rédigé, où le poulet n'excluait pas les pescatariens. Chaque ingrédient porte une
+**origine** (`plant`, `honey`, `dairy`, `egg`, `fish`, `meat`) dont les exclusions se déduisent
+([diet.ts](src/domain/recipes/diet.ts)). Une origine se vérifie d'un coup d'œil ; une liste
+d'exclusions se recopie et se trompe.
+
+**L'exclusion des allergènes est la seule règle dure.** Le profil stocke des libellés français,
+les recettes portent une union stricte : sans traduction explicite, le filtre le plus important de
+la phase ne s'appliquerait jamais, et sans rien signaler. Le vocabulaire est donc **fermé à la
+saisie** — les puces d'allergies de l'onboarding sont exactement les neuf allergènes que le
+catalogue sait exclure, sésame compris, qui manquait. Une saisie libre que le code ne reconnaît pas
+n'est pas ignorée en silence : l'écran des recettes le dit
+([allergens.ts](src/domain/recipes/allergens.ts)).
+
+**Le reste est une préférence, et se traite comme telle.** Régime, aliments détestés et temps
+disponible excluent aussi, mais leur enjeu est le confort. La correspondance des aliments détestés
+est approximative — « oignon » retrouve « Oignon » — là où celle des allergènes ne l'est jamais.
+
+**Logger une recette crée une entrée de journal ordinaire.** Mêmes colonnes, même snapshot figé,
+mêmes totaux du jour. L'entrée ne référence pas la recette : le catalogue est livré avec
+l'application et peut changer à la mise à jour suivante, tandis que le snapshot dit ce qui a été
+mangé ce jour-là et continuera de le dire (PHASE_2 §2.4).
+
+### Cru ou cuit
+
+100 g de riz cru ne sont pas 100 g de riz cuit : le premier pèse près de trois fois plus une fois
+cuit. Chaque ingrédient déclare son **état de référence**, les quantités des recettes sont
+exprimées dans ce même état, et l'écran de détail l'affiche — peser au mauvais moment fausserait la
+journée d'un facteur trois.
+
+> ⚠️ Les valeurs nutritionnelles du catalogue sont des ordres de grandeur, **à confirmer avec une
+> base officielle** (Ciqual) avant mise en production. Ce qui en dépend est détaillé dans
+> `AVANCEMENT.md`.
+
 ## Documentation
 
 La planification complète vit dans [`files/`](files/) — point d'entrée :

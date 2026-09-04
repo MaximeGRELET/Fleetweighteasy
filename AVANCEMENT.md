@@ -1,25 +1,25 @@
 # État d'avancement — Application d'accompagnement à la perte de poids
 
 > Document de suivi. Mis à jour au fil des phases.
-> **Dernière mise à jour :** fin Phase 6 (moteur de conseils). Phase 5 validée sur appareil.
+> **Dernière mise à jour :** fin Phase 7 (recettes). Phase 6 validée sur appareil.
 
 ---
 
 ## Vue d'ensemble
 
-| Phase | Intitulé                     | État                                              |
-| ----- | ---------------------------- | ------------------------------------------------- |
-| 0     | Fondations projet            | ✅ Terminée & commitée                            |
-| 1     | Domaine nutritionnel         | ✅ Terminée & commitée                            |
-| 2     | Data & persistance locale    | ✅ Terminée & commitée                            |
-| 3     | Onboarding                   | ✅ Terminée & commitée                            |
-| 4     | Journal + Open Food Facts    | ✅ Terminée & commitée                            |
-| 5     | Suivi du poids & progression | ⏭️ Prochaine                                      |
-| 6     | Moteur de conseils           | ⬜ Contenu prêt (25 briques rédigées)             |
-| 7     | Recettes                     | ⬜ Contenu prêt (22 recettes + table ingrédients) |
-| 8     | Sport                        | ⬜ Données prêtes (METs + noyau exercices)        |
-| 9     | Backend & synchronisation    | ⬜ Groundwork posé — voir dépendances d'entrée    |
-| 10    | Durcissement & mise en prod  | ⬜                                                |
+| Phase | Intitulé                     | État                                           |
+| ----- | ---------------------------- | ---------------------------------------------- |
+| 0     | Fondations projet            | ✅ Terminée & commitée                         |
+| 1     | Domaine nutritionnel         | ✅ Terminée & commitée                         |
+| 2     | Data & persistance locale    | ✅ Terminée & commitée                         |
+| 3     | Onboarding                   | ✅ Terminée & commitée                         |
+| 4     | Journal + Open Food Facts    | ✅ Terminée & commitée                         |
+| 5     | Suivi du poids & progression | ⏭️ Prochaine                                   |
+| 6     | Moteur de conseils           | ⬜ Contenu prêt (25 briques rédigées)          |
+| 7     | Recettes                     | ✅ Construite — à valider sur appareil         |
+| 8     | Sport                        | ⬜ Données prêtes (METs + noyau exercices)     |
+| 9     | Backend & synchronisation    | ⬜ Groundwork posé — voir dépendances d'entrée |
+| 10    | Durcissement & mise en prod  | ⬜                                             |
 
 ---
 
@@ -174,6 +174,66 @@ Ce que sa priorité de 45 fait réellement — et qui est son vrai rôle — c'e
 général sur les fluctuations est **remplacé** par le rappel. C'est vérifié par un test unitaire et
 par un test d'écran. Question close ; ne pas la rouvrir sans changer d'abord l'intention produit.
 
+### Phase 7 — Recettes
+
+- Domaine `recipes/` pur et testé à 100 % (branches comprises) : table d'ingrédients, catalogue, dérivation, nutrition, filtrage.
+- **22 recettes et 47 ingrédients** transcrits du catalogue rédigé, quantités et étapes inchangées.
+- **Allergènes et régimes dérivés des ingrédients**, jamais saisis par recette.
+- **Vocabulaire d'allergènes fermé à l'onboarding** (9 puces, sésame ajouté) et table de correspondance couvrant les libellés antérieurs — un profil existant reste protégé.
+- **Nutrition calculée** depuis les ingrédients, à l'état de référence déclaré (cru/cuit), affiché à l'écran.
+- **Ajout au journal par le mécanisme de snapshot existant** : aucune migration, aucune seconde voie.
+- Liste filtrée, détail avec ingrédients/étapes/nutrition, choix du nombre de portions.
+- 1 110 tests au vert, lint et typecheck propres. Bundle Android vérifié via Metro.
+
+---
+
+### Décisions — Phase 7
+
+**L'origine remplace la liste d'exclusions par ingrédient.** La table rédigée donnait par
+ingrédient les régimes exclus. Elle était déjà fausse : le poulet et le bœuf n'y excluaient pas
+`pescatarian`, alors que la recette de salade de poulet, elle, se déclarait bien incompatible. Une
+dérivation fidèle à la table aurait donc servi du poulet aux pescatariens. Chaque ingrédient porte
+désormais une **origine** dont les exclusions se déduisent — une origine se vérifie d'un coup
+d'œil, une liste se recopie.
+
+**Le miel est classé d'origine animale**, donc exclu du régime végétalien, ce que la table ne
+faisait pas. Aucune recette végétalienne du catalogue n'en contient : le classement ne retire rien
+à personne aujourd'hui, et évite une réclamation le jour où une recette au miel sera ajoutée.
+
+**Le vocabulaire d'allergènes est fermé à la saisie** (décision prise en cours de phase). Les puces
+de l'onboarding sont exactement les neuf allergènes que le catalogue sait exclure. Le champ libre
+subsiste, marqué comme non filtrant, et ce qui n'est pas reconnu est signalé sur l'écran des
+recettes plutôt que tu. **Cela a modifié un écran de la Phase 3**, déjà validé.
+
+**Une entrée issue d'une recette ne référence pas la recette.** Ajouter `recipe_id` à
+`food_log_entry` aurait imposé une reconstruction de table (la contrainte CHECK « un aliment OU un
+repas » est au niveau table en SQLite), avec copie de données utilisateur. Le snapshot suffit à
+l'usage : corriger une portion déjà loggée se fait en supprimant puis réajoutant, comme aujourd'hui
+pour un aliment dont la source a disparu.
+
+---
+
+### Ce qui dépend de la vérification Ciqual
+
+Question posée en début de phase — voici la réponse précise.
+
+**Ne dépendent pas des valeurs numériques**, et sont donc solides dès maintenant :
+l'exclusion des allergènes, la compatibilité régime, le filtrage et le classement. Tous se fondent
+sur les allergènes et l'origine des ingrédients, pas sur les kcal. Aucun chemin de sécurité n'est
+suspendu à cette vérification.
+
+**En dépendent directement :** la nutrition affichée par portion, et surtout **le snapshot écrit au
+journal**. C'est le point à surveiller : par conception, un snapshot est immuable — corriger la
+table d'ingrédients plus tard ne rectifiera pas les entrées déjà enregistrées. Il est donc
+préférable que la vérification ait lieu **avant que de vrais utilisateurs ne loggent des recettes**,
+faute de quoi leur historique gardera durablement les valeurs provisoires.
+
+**Ce que la transcription a déjà éliminé :** un contrôle automatique compare les calories de chaque
+ingrédient à ses macronutriments (système Atwater). Aucune erreur de saisie n'en ressort — les
+écarts observés (brocoli, concombre, tomate, pomme) s'expliquent par les fibres, comptées dans les
+glucides mais n'apportant qu'environ 2 kcal/g. Ce test attrape une coquille, pas une valeur
+officiellement fausse : il ne remplace pas Ciqual.
+
 ---
 
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
@@ -192,44 +252,44 @@ par un test d'écran. Question close ; ne pas la rouvrir sans changer d'abord l'
 - **Quotas OFF** : calibrés à 80 lectures / 8 recherches par minute (sous les 100/10 documentés). À revérifier contre la politique courante.
 - **Signal de fiabilité** : `verified` est toujours `false` pour OFF (choix sémantique assumé). Vérifier que l'utilisateur a _un_ autre signal de fiabilité des données (complétude, mention « données communautaires »).
 - **Accessibilité** : les puces de choix de repas utilisent un rôle `checkbox` pour un choix exclusif (devrait être `radio`). À corriger en passe d'accessibilité groupée (Phase 10).
+- **Trou de contenu conseils (Phase 6)** : aucune brique `protein` pour les régimes `flexitarian` et `pescatarian` — ces profils ne reçoivent aucun conseil sur ce thème. Tracé aussi dans `files/BRIQUES_CONSEIL_REDIGEES.md`. **À rédiger avant la Phase 10.**
+- **Seuils inventés en Phase 6**, faute de spécification : « écart récent » (dépassement de 25 % du budget sur les deux derniers jours) et « nouvel utilisateur » (sept jours). Documentés et isolés dans `domain/advice/context.ts`, faciles à déplacer si l'usage réel les dément.
 
 ---
 
-## À valider sur appareil (Phase 6)
+## À valider sur appareil (Phase 7)
 
 Ce qui pouvait être mécanisé l'a été ; ce qui reste demande un écran et un œil.
 
-**Déjà couvert par les tests, à ne re-vérifier que par acquit de conscience :**
-
-- Le conseil du jour change bien avec la situation — accueil du nouvel utilisateur, reprise après
-  écart, rappel de pesée (`tests/component/advice.test.tsx`).
-- Une mise en garde de sécurité prend la place du conseil du jour, et aucun conseil général ne
-  s'affiche au-dessus (même fichier).
-- Les trois écrans prennent leurs couleurs dans la palette sombre, sans couleur figée
-  (`tests/component/dark-theme.test.tsx`).
+**Déjà couvert par les tests :** exclusion des allergènes (les neuf, plus les libellés antérieurs),
+respect du régime, avertissement sur une allergie non reconnue, filtre par moment de la journée,
+ajout au journal avec snapshot figé et mise à l'échelle des portions.
 
 **Ce qui demande réellement l'appareil :**
 
-- [ ] **Lisibilité** des briques sur écran de téléphone : longueur des textes, césures, hauteur de
-      la carte de conseil. Les tests savent qu'un texte est affiché, pas s'il se lit.
-- [ ] **Contraste réel en thème sombre**, en conditions d'éclairage variables. Les tests vérifient
-      que les bons tokens sont appliqués, pas qu'ils sont confortables.
-- [ ] **Enchaînement des surfaces** : tableau du jour → section conseils → retour, et cohérence de
-      ce qui est mis en avant entre les deux.
-- [ ] **Encombrement du tableau du jour** : le conseil s'ajoute au budget et aux quatre repas.
-      Vérifier que l'écran ne devient pas trop chargé avant le premier repas.
+- [ ] **Lisibilité d'une recette** sur écran de téléphone : longueur de la liste d'ingrédients,
+      numérotation des étapes, encombrement de la page de détail.
+- [ ] **Le sélecteur de portions** : la demi-portion est-elle compréhensible, le pas de 0,5 est-il
+      le bon ?
+- [ ] **Contraste en thème sombre** de la mention « Contient : … », affichée en ton `caution`.
+- [ ] **Parcours complet** : tableau du jour → recettes → détail → ajout → retour au journal, et
+      vérifier que l'entrée ajoutée apparaît bien au bon repas.
+- [ ] **Écran d'onboarding « alimentation »** : les puces d'allergies ont changé, vérifier qu'elles
+      tiennent bien en largeur avec « Fruits à coque » et « Crustacés ».
 
 ---
 
-## Points relevés en Phase 6 (à arbitrer, non bloquants)
+## Points relevés en Phase 7 (à arbitrer, non bloquants)
 
-- **Aucune brique protéines pour les régimes `flexitarian` et `pescatarian`.** Ces profils ne
-  reçoivent donc aucun conseil sur ce thème. Le moteur préfère se taire plutôt que de servir un
-  texte pensé pour quelqu'un d'autre. Tracé dans `files/BRIQUES_CONSEIL_REDIGEES.md` : **à rédiger
-  avant la Phase 10.**
-- **Seuils inventés faute de spécification.** Ni le brief ni la spec ne définissaient « écart
-  récent » ni « nouvel utilisateur ». Retenus : dépassement de 25 % du budget sur les deux derniers
-  jours, et sept jours d'ancienneté. Documentés et isolés dans `domain/advice/context.ts`.
+- **Le catalogue rédigé déclare des régimes par recette de façon inégale** : la recette 2 sous-déclare
+  (« vegetarian » seul, alors qu'elle convient aussi aux pescatariens), la recette 20 mélange clés
+  anglaises et mot français. Ces libellés ne sont pas utilisés par le code — la dérivation fait foi —
+  mais ils restent trompeurs à la lecture du document.
+- **Un aliment détesté absent de la table d'ingrédients n'exclut rien.** « Coriandre », proposé par
+  l'onboarding, n'est ingrédient d'aucune recette : le déclarer n'a aucun effet. Sans conséquence de
+  sécurité, mais l'utilisateur peut s'attendre à autre chose.
+- **Le catalogue ne porte aucune image** alors que la spec §7.6 en prévoit. Le modèle laisse la
+  place (`imageUrl` dans la spec) mais aucune source d'images n'est définie.
 
 ---
 
@@ -268,11 +328,9 @@ Une fois la table en place, le branchement se réduit à une ligne dans `useAdvi
 
 ---
 
-## Prochaine étape : Phase 7 — Recettes
+## Prochaine étape : Phase 8 — Sport
 
-Le contenu est prêt (22 recettes + table d'ingrédients dans `files/RECETTES_REDIGEES.md`). Le
-filtrage par régime, allergies et aliments détestés s'appuiera sur les mêmes champs de profil que
-les tags de conseil.
-
-**Rappel de la liste d'actions ci-dessus :** vérifier les valeurs nutritionnelles des recettes avec
-la base Ciqual au moment de l'intégration.
+Les données sont prêtes (`files/DONNEES_SPORT.md` : table METs + noyau d'exercices). Le calcul des
+calories sportives existe depuis la Phase 1 (`calories-sport.ts`, modes `fixed` / `credited`) et le
+journal des séances depuis la Phase 2 (`workout.repo`) : la phase branche du contenu sur des
+fondations déjà posées, comme la Phase 7 vient de le faire.
