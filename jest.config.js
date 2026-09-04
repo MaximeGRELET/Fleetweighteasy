@@ -41,6 +41,14 @@ module.exports = {
       functions: 100,
       lines: 100,
     },
+    // Entraînement : la sélection de programme et la progression de charge
+    // décident de ce qu'on demande au corps de quelqu'un.
+    'src/domain/training/**/*.ts': {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+    },
     // Recettes : l'exclusion des allergènes est le seul filtre que la spec
     // qualifie de non négociable. Un chemin non couvert y est un allergène
     // potentiellement servi.

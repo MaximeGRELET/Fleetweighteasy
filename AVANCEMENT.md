@@ -1,7 +1,7 @@
 # État d'avancement — Application d'accompagnement à la perte de poids
 
 > Document de suivi. Mis à jour au fil des phases.
-> **Dernière mise à jour :** fin Phase 7 (recettes). Phase 6 validée sur appareil.
+> **Dernière mise à jour :** fin Phase 8 (sport). Phase 7 validée sur appareil.
 
 ---
 
@@ -234,6 +234,48 @@ ingrédient à ses macronutriments (système Atwater). Aucune erreur de saisie n
 glucides mais n'apportant qu'environ 2 kcal/g. Ce test attrape une coquille, pas une valeur
 officiellement fausse : il ne remplace pas Ciqual.
 
+### Phase 8 — Sport
+
+- Domaine `training/` pur et testé à 100 % (branches comprises) : noyau d'exercices, programmes, sélection, double progression.
+- **Réutilisation intégrale de l'existant** : METs et `estimateCardioKcal` viennent de la Phase 1, les types de séance de la Phase 2, le `calorieMode` de la Phase 4. Rien n'a été redéfini.
+- **31 exercices et 5 programmes** transcrits/composés depuis le document de référence, maison et salle.
+- **Musculation sans estimation calorique**, décision de la Phase 1 reprise telle quelle : elle vise la composition corporelle, pas la dépense.
+- **Dépense cardio figée à l'enregistrement**, comme un snapshot nutritionnel — colonne `estimated_kcal_burned` déjà présente au schéma, aucune seconde voie créée.
+- Écrans : accueil sport, saisie cardio avec estimation, séance de musculation avec journalisation et cible de progression.
+- 1 192 tests au vert, lint et typecheck propres. Bundle Android vérifié via Metro.
+
+---
+
+### Décisions — Phase 8
+
+**Le crédit sportif ne peut pas contourner le plancher calorique — vérifié.** C'était la question
+posée en début de phase. Le crédit **ajoute** au budget : celui-ci vaut toujours objectif + sport,
+donc reste au-dessus du plancher quel que soit le volume. Le seul chemin qui aurait pu creuser le
+budget — une dépense négative — est refusé à l'entrée par `applyCalorieMode`. Six tests
+paramétrés (0 à 5 000 kcal) verrouillent l'invariant.
+
+**Constat inverse, laissé en l'état sur décision produit.** C'est le mode `fixed`, le défaut, qui
+fait chuter l'énergie _nette_ : 1 200 kcal de budget moins 800 kcal de sport laissent 400 kcal
+nets. C'est voulu — le facteur d'activité du TDEE couvre l'entraînement habituel — et l'écran du
+jour affiche déjà la dépense séparément. Aucun avertissement n'a été ajouté : il aurait fallu
+inventer un seuil d'énergie disponible, qui est une notion clinique à part entière.
+
+**La musculation n'ouvre aucun crédit, même en mode crédité.** Reprise de la décision de la
+Phase 1 : lui coller une valeur METs donnerait un chiffre trompeur. La séance est enregistrée et
+visible, elle ne touche simplement pas au budget.
+
+**Le programme recommandé est plafonné au niveau intermédiaire.** L'onboarding ne demande aucun
+niveau d'entraînement : le seul indice disponible est le nombre de jours par semaine, qui dit la
+disponibilité, pas l'expérience. Quelqu'un peut avoir six soirées libres et n'avoir jamais tenu une
+barre. Les programmes avancés restent consultables, ils ne sont jamais mis en avant. Un niveau
+auto-déclaré à l'onboarding lèverait cette approximation.
+
+**Les consignes d'exécution sont livrées vides, et l'écran le dit.** Le document les renvoie
+explicitement à un chantier de contenu séparé (§C.2), au même titre que les briques de conseil : ce
+sont des consignes de prévention des blessures, qui demandent une relecture professionnelle. Les
+inventer aurait été le contraire de prudent. Un avertissement sport dédié (`SPORT_DISCLAIMER`) est
+affiché en attendant, sur l'accueil sport comme sur la séance.
+
 ---
 
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
@@ -243,7 +285,8 @@ officiellement fausse : il ne remplace pas Ciqual.
 3. **Conseil juridique ODbL** (Open Food Facts, clause share-alike) avant tout usage commercial.
 4. 🚧 **BLOQUANT AVANT PROD — vérifier les valeurs nutritionnelles** des recettes et de la table d'ingrédients avec la base Ciqual (France). **Prérequis à toute mise en service auprès de vrais utilisateurs**, et non une tâche de phase de développement : la Phase 7 est livrée, mais le catalogue ne doit pas être exposé à des utilisateurs réels tant que ce contrôle n'a pas eu lieu. **Raison :** le snapshot nutritionnel est immuable par conception (PHASE_2 §2.4). Une entrée de journal fige les valeurs à l'ajout, et corriger la table plus tard **ne rectifiera pas** les entrées déjà écrites — l'historique d'un utilisateur garderait indéfiniment des valeurs provisoires. Il n'y a pas de rattrapage possible après coup, seulement avant. Détail de ce qui en dépend et de ce qui n'en dépend pas : section « Ce qui dépend de la vérification Ciqual ».
 5. **Nom définitif du produit** (provisoire actuel : FleetWeightEasy) — centralisé, renommage indolore.
-6. **Source des images de recettes** — décision produit en attente. La spec §7.6 prévoit une illustration par recette, mais rien n'est arrêté : banque d'images, droits d'usage, format, hébergement. Le champ `imageUrl` existe dans le modèle (`src/domain/recipes/types.ts`), documenté comme **prévu mais non branché** — aucun écran ne le lit, aucune recette ne le renseigne. Rien à implémenter tant que la source n'est pas définie.
+6. **Consignes d'exécution des exercices** — chantier de contenu, à faire avant la prod. 31 exercices × 2-4 puces (exécution correcte + point de sécurité), renvoyées par `DONNEES_SPORT.md` §C.2 à un chantier séparé « comme les briques ». **Contenu de prévention des blessures : à faire relire par un professionnel**, au même titre que les briques sensibles. En attendant, `instructions` est vide partout, l'écran de séance l'annonce et affiche `SPORT_DISCLAIMER`. Un test échouera le jour où le contenu arrivera — c'est le rappel voulu pour retirer l'avertissement.
+7. **Source des images de recettes** — décision produit en attente. La spec §7.6 prévoit une illustration par recette, mais rien n'est arrêté : banque d'images, droits d'usage, format, hébergement. Le champ `imageUrl` existe dans le modèle (`src/domain/recipes/types.ts`), documenté comme **prévu mais non branché** — aucun écran ne le lit, aucune recette ne le renseigne. Rien à implémenter tant que la source n'est pas définie.
 
 ---
 
@@ -258,40 +301,38 @@ officiellement fausse : il ne remplace pas Ciqual.
 
 ---
 
-## À valider sur appareil (Phase 7)
+## À valider sur appareil (Phase 8)
 
 Ce qui pouvait être mécanisé l'a été ; ce qui reste demande un écran et un œil.
 
-**Déjà couvert par les tests :** exclusion des allergènes (les neuf, plus les libellés antérieurs),
-respect du régime, avertissement sur une allergie non reconnue, filtre par moment de la journée,
-ajout au journal avec snapshot figé et mise à l'échelle des portions.
+**Déjà couvert par les tests :** estimation cardio et son figeage à l'enregistrement, message du
+mode de calories (fixe vs crédité), sélection du programme selon matériel et jours, journalisation
+d'une séance de musculation sans crédit calorique, cible de progression, avertissements affichés.
 
 **Ce qui demande réellement l'appareil :**
 
-- [ ] **Lisibilité d'une recette** sur écran de téléphone : longueur de la liste d'ingrédients,
-      numérotation des étapes, encombrement de la page de détail.
-- [ ] **Le sélecteur de portions** : la demi-portion est-elle compréhensible, le pas de 0,5 est-il
-      le bon ?
-- [ ] **Contraste en thème sombre** de la mention « Contient : … », affichée en ton `caution`.
-- [ ] **Parcours complet** : tableau du jour → recettes → détail → ajout → retour au journal, et
-      vérifier que l'entrée ajoutée apparaît bien au bon repas.
-      **Régression à revérifier — écran d'onboarding « alimentation » (Phase 3)**
+- [ ] **Longueur de la liste d'intensités cardio** : la marche en propose cinq, le vélo sept — vérifier
+      que le choix reste lisible sans faire défiler indéfiniment.
+- [ ] **Écran de séance de musculation** : cinq exercices, deux champs chacun — vérifier
+      l'encombrement et le confort de saisie au clavier numérique.
+- [ ] **Contraste en thème sombre** des deux encarts `caution` (avertissement sport, consignes à
+      venir), qui apparaissent tous deux sur le parcours.
+- [ ] **Parcours complet** : tableau du jour → séances → cardio → retour, et vérifier que la
+      dépense estimée remonte bien au budget du jour dans le mode réglé.
+- [ ] **Lisibilité du message de progression** après saisie, qui s'affiche sous chaque exercice.
 
-Cet écran avait été validé sur appareil en Phase 3. La Phase 7 l'a **modifié** : les puces
-d'allergies viennent désormais de `ALLERGEN_CHOICES`, et celles d'aliments détestés de
-`COMMON_DISLIKE_SUGGESTIONS`. Il ne suffit donc pas de valider les nouveaux écrans de recettes.
+---
 
-- [ ] **Largeur et lisibilité des puces d'allergènes** : « Fruits à coque » et « Crustacés » sont
-      les plus longues — vérifier qu'elles ne débordent pas et que le retour à la ligne reste
-      propre sur un écran étroit.
-- [ ] **Présence du sésame** dans les propositions : il manquait avant la Phase 7, c'est un
-      allergène réglementé et le houmous en contient.
-- [ ] **Les neuf allergènes sont bien là** : Gluten, Lait, Œufs, Fruits à coque, Arachides, Soja,
-      Crustacés, Poisson, Sésame.
-- [ ] **Nouvelles puces d'aliments détestés** (Oignon, Poivron, Tofu ferme, Brocoli, Épinards
-      frais, Avocat) : vérifier la lisibilité, « Épinards frais » étant la plus longue.
-- [ ] **Le champ libre d'allergie** affiche bien qu'il ne sert pas au filtrage.
-- [ ] **Un profil déjà créé** avant cette phase s'ouvre sans perdre ses allergies déjà cochées.
+## Points relevés en Phase 8 (à arbitrer, non bloquants)
+
+- **Aucun tirage vertical au poids du corps.** La liste de référence n'en propose pas — une traction
+  demande une barre. Les programmes maison couvrent donc huit patterns sur neuf. Un test fige le
+  constat et échouera si un exercice comble le trou.
+- **Aucun niveau d'entraînement déclaré à l'onboarding.** La sélection de programme s'en passe par
+  prudence (plafond intermédiaire), mais une question à l'onboarding rendrait la recommandation
+  juste plutôt que prudente.
+- **Le dossier `src/app/(tabs)/` est un échafaudage vide** de la Phase 0 (cinq dossiers, cinq
+  `.gitkeep`). L'app utilise des routes à plat. À supprimer ou à utiliser en Phase 10.
 
 ---
 
@@ -346,9 +387,9 @@ Une fois la table en place, le branchement se réduit à une ligne dans `useAdvi
 
 ---
 
-## Prochaine étape : Phase 8 — Sport
+## Prochaine étape : Phase 9 — Backend & synchronisation
 
-Les données sont prêtes (`files/DONNEES_SPORT.md` : table METs + noyau d'exercices). Le calcul des
-calories sportives existe depuis la Phase 1 (`calories-sport.ts`, modes `fixed` / `credited`) et le
-journal des séances depuis la Phase 2 (`workout.repo`) : la phase branche du contenu sur des
-fondations déjà posées, comme la Phase 7 vient de le faire.
+Le groundwork est posé depuis la Phase 2 : `sync_meta` avec `dirty` / `updatedAt` / `syncedAt` /
+`deletedAt`, écrit dans la même transaction que chaque écriture métier, et les pierres tombales des
+suppressions. Les dépendances d'entrée sont listées ci-dessus — dont l'historique des objectifs
+successifs, sans lequel `detectRiskSignals` reste sans données.

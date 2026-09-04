@@ -115,6 +115,12 @@ function TodayScreen() {
               onPress={() => router.push('/recipes')}
               testID="today-recipes"
             />
+            <Button
+              label="Mes séances"
+              variant="secondary"
+              onPress={() => router.push('/training')}
+              testID="today-training"
+            />
           </View>
 
           <View style={styles.sections}>

@@ -1,4 +1,8 @@
 import { InvalidBiometricsError, InvalidInputError } from '@/domain/errors';
+import { calculateCalorieTarget } from '@/domain/nutrition/energy';
+import { getMinimumDailyKcal } from '@/domain/nutrition/safety';
+
+import { buildProfile, NOW } from '../profile-fixtures';
 import {
   applyCalorieMode,
   buildDualCalorieView,
@@ -144,5 +148,64 @@ describe('buildDualCalorieView', () => {
 
     expect(view.active).toBe(view.credited);
     expect(view.active.explanation).toBe('credited_mode');
+  });
+});
+
+/**
+ * Le crédit sportif rouvre du budget alimentaire : il doit rester sous les
+ * mêmes garde-fous que le calcul d'objectif. Ces tests vérifient qu'aucune
+ * séance, si longue soit-elle, ne peut faire passer le budget sous le plancher
+ * calorique — le crédit **ajoute**, il ne retranche jamais.
+ */
+describe('le crédit sportif ne contourne pas le plancher calorique', () => {
+  /** Profil dont l'objectif est déjà ramené au plancher par le garde-fou. */
+  const FLOORED = buildProfile({
+    sex: 'female',
+    heightCm: 155,
+    currentWeightKg: 50,
+    activityLevel: 'sedentary',
+    goalType: 'weight_loss',
+    weeklyRateKg: 0.4,
+  });
+
+  it('part bien d’un objectif posé au plancher', () => {
+    const target = calculateCalorieTarget(FLOORED, NOW);
+
+    expect(target.adjustments).toContain('floor_applied');
+    expect(target.targetKcal).toBe(getMinimumDailyKcal(FLOORED.sex));
+  });
+
+  it.each([0, 1, 300, 800, 2000, 5000])(
+    'garde le budget au-dessus du plancher pour %i kcal de sport',
+    (exerciseKcal) => {
+      const target = calculateCalorieTarget(FLOORED, NOW);
+      const floor = getMinimumDailyKcal(FLOORED.sex);
+      const view = buildDualCalorieView({
+        mode: 'credited',
+        targetKcal: target.targetKcal,
+        exerciseKcal,
+      });
+
+      expect(view.credited.effectiveBudgetKcal).toBeGreaterThanOrEqual(floor);
+      expect(view.fixed.effectiveBudgetKcal).toBeGreaterThanOrEqual(floor);
+    },
+  );
+
+  it('ne retranche jamais : le budget crédité est toujours ≥ le budget fixe', () => {
+    for (const exerciseKcal of [0, 250, 900, 3000]) {
+      const view = buildDualCalorieView({ mode: 'credited', targetKcal: 1200, exerciseKcal });
+
+      expect(view.credited.effectiveBudgetKcal).toBeGreaterThanOrEqual(
+        view.fixed.effectiveBudgetKcal,
+      );
+    }
+  });
+
+  it('refuse une dépense négative, qui seule pourrait creuser le budget', () => {
+    // C'est le seul chemin par lequel un crédit pourrait passer sous le
+    // plancher : il est fermé à l'entrée.
+    expect(() =>
+      applyCalorieMode({ mode: 'credited', targetKcal: 1200, exerciseKcal: -500 }),
+    ).toThrow(InvalidInputError);
   });
 });

@@ -329,6 +329,44 @@ journée d'un facteur trois.
 > base officielle** (Ciqual) avant mise en production. Ce qui en dépend est détaillé dans
 > `AVANCEMENT.md`.
 
+## Sport
+
+Cardio et musculation ne se modélisent pas pareil, et ne se rejoignent que dans le journal des
+séances (PLAN_IMPLEMENTATION §4.4).
+
+**Le cardio estime une dépense ; la musculation n'en estime aucune.** Ce n'est pas un oubli : la
+musculation vise la composition corporelle, pas la dépense, et lui coller une valeur METs
+donnerait un chiffre trompeur qui ouvrirait un crédit alimentaire injustifié. Une séance de
+musculation est donc enregistrée et visible, sans jamais toucher au budget.
+
+**Le mode de calories n'est pas redéfini ici.** Les écrans sport lisent le `calorieMode` du profil
+via `buildDailyBudget`, comme le tableau du jour : en mode `fixed`, une séance est affichée mais
+n'ouvre rien ; en `credited`, elle s'ajoute visiblement. Il n'existe pas de second chemin.
+
+**La dépense est figée à l'enregistrement**, dans la colonne `estimated_kcal_burned` — même
+garantie que le snapshot nutritionnel d'une entrée de journal. Corriger son poids plus tard ne
+réécrit pas les séances passées. Le nom de l'exercice est figé de la même façon, pour que
+l'historique reste lisible si le noyau change.
+
+**Le crédit sportif ne peut pas contourner le plancher calorique.** C'est vérifié par des tests
+dédiés : le crédit **ajoute** au budget, donc celui-ci reste toujours au-dessus du plancher, et une
+dépense négative est refusée à l'entrée. Le seul chemin par lequel un crédit aurait pu creuser le
+budget est fermé.
+
+### Programmes et progression
+
+Le programme recommandé se choisit sur les jours disponibles et le matériel déclaré, **plafonné à
+un niveau intermédiaire** : l'onboarding ne demande aucun niveau d'entraînement, et le nombre de
+jours libres dit la disponibilité, pas l'expérience. Un programme avancé reste consultable, il
+n'est simplement jamais celui qu'on met en avant. La progression suit la double progression —
+quand le haut de la fourchette est tenu **sur toutes les séries**, la charge monte (salle) ou les
+répétitions augmentent (maison).
+
+> ⚠️ Les **consignes d'exécution** de chaque exercice ne sont pas rédigées : c'est un chantier de
+> contenu distinct (DONNEES_SPORT §C.2), au même titre que les briques de conseil, et il touche à
+> la prévention des blessures. L'écran l'indique explicitement plutôt que de laisser croire qu'un
+> mouvement n'en demande pas, et affiche l'avertissement sport en attendant.
+
 ## Documentation
 
 La planification complète vit dans [`files/`](files/) — point d'entrée :
