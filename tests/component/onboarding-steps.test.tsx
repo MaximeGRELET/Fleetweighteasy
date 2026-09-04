@@ -11,6 +11,8 @@ import { getMaxWeeklyRateKg } from '@/domain/nutrition/safety';
 import { minimumHealthyWeightKg } from '@/domain/profile/bmi';
 import { buildUserProfile, type ProfileDraft } from '@/domain/profile/draft';
 import { formatKcal, formatKg, formatWeeklyRate } from '@/lib/format';
+import { ALLERGEN_CHOICES } from '@/domain/recipes/allergens';
+import { COMMON_DISLIKE_SUGGESTIONS } from '@/domain/recipes/content/ingredients';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 import { asRenderedText, createAppHarness, type AppHarness } from '../support/render-with-app';
@@ -459,22 +461,46 @@ describe('écran d’alimentation', () => {
 
     await fireEvent.press(screen.getByTestId('diet-vegetarian'));
     await fireEvent.press(screen.getByTestId('allergy-Gluten'));
-    await fireEvent.press(screen.getByTestId('dislike-Coriandre'));
+    await fireEvent.press(screen.getByTestId('dislike-Oignon'));
 
     const draft = useOnboardingStore.getState().draft;
     expect(draft.dietType).toBe('vegetarian');
     expect(draft.allergies).toEqual(['Gluten']);
-    expect(draft.dislikes).toEqual(['Coriandre']);
+    expect(draft.dislikes).toEqual(['Oignon']);
   });
 
-  it('accepte une allergie hors liste', async () => {
+  /**
+   * Le vocabulaire d'allergènes a été fermé en Phase 7 : les puces sont
+   * exactement ce que le filtrage des recettes sait exclure. Une puce en moins
+   * ici, et l'allergène correspondant ne serait plus jamais déclarable.
+   */
+  it('propose les neuf allergènes que le filtrage sait exclure', async () => {
     const screen = await harness.renderScreen(<DietScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('custom-allergy-field'), 'Sésame');
+    for (const label of ALLERGEN_CHOICES) {
+      expect(screen.getByTestId(`allergy-${label}`)).toBeTruthy();
+    }
+
+    // Le sésame manquait avant la Phase 7, alors que le houmous en contient.
+    expect(screen.getByTestId('allergy-Sésame')).toBeTruthy();
+  });
+
+  it('ne propose que des aliments détestés que les recettes peuvent écarter', async () => {
+    const screen = await harness.renderScreen(<DietScreen />);
+
+    for (const label of COMMON_DISLIKE_SUGGESTIONS) {
+      expect(screen.getByTestId(`dislike-${label}`)).toBeTruthy();
+    }
+  });
+
+  it('accepte une allergie hors liste, sans prétendre la filtrer', async () => {
+    const screen = await harness.renderScreen(<DietScreen />);
+
+    await fireEvent.changeText(screen.getByTestId('custom-allergy-field'), 'Kiwi');
     await fireEvent.press(screen.getByTestId('add-allergy'));
 
-    expect(useOnboardingStore.getState().draft.allergies).toEqual(['Sésame']);
-    expect(screen.getByTestId('allergy-Sésame')).toBeTruthy();
+    expect(useOnboardingStore.getState().draft.allergies).toEqual(['Kiwi']);
+    expect(screen.getByTestId('allergy-Kiwi')).toBeTruthy();
   });
 
   it('ignore un ajout vide ou en doublon', async () => {

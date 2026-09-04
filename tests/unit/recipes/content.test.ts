@@ -1,4 +1,10 @@
-import { INGREDIENTS, INGREDIENTS_BY_ID } from '@/domain/recipes/content/ingredients';
+import { matchesIngredientName } from '@/domain/recipes/allergens';
+import {
+  COMMON_DISLIKE_SUGGESTIONS,
+  DISLIKE_SUGGESTION_IDS,
+  INGREDIENTS,
+  INGREDIENTS_BY_ID,
+} from '@/domain/recipes/content/ingredients';
 import { RECIPES } from '@/domain/recipes/content/recipes';
 import { resolveRecipe } from '@/domain/recipes/nutrition';
 import { ALLERGENS } from '@/domain/recipes/types';
@@ -58,6 +64,32 @@ describe('table d’ingrédients', () => {
       }
 
       expect(Math.abs(fromMacros - kcal) / kcal).toBeLessThan(0.3);
+    }
+  });
+
+  /**
+   * Les suggestions d'aliments détestés doivent pouvoir écarter quelque chose.
+   * Les six proposées avant la Phase 7 — coriandre, champignons, olives, foie,
+   * chou, anchois — ne correspondaient à aucun ingrédient : les cocher n'avait
+   * aucun effet, et rien ne le signalait.
+   */
+  it('ne propose que des aliments détestés que le catalogue peut écarter', () => {
+    expect(COMMON_DISLIKE_SUGGESTIONS).toHaveLength(DISLIKE_SUGGESTION_IDS.length);
+
+    for (const suggestion of COMMON_DISLIKE_SUGGESTIONS) {
+      const matching = INGREDIENTS.filter((ingredient) =>
+        matchesIngredientName(suggestion, ingredient.name),
+      );
+
+      expect(matching.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('ne suggère que des aliments réellement utilisés par une recette', () => {
+    const used = new Set(RECIPES.flatMap((r) => r.ingredients.map(({ refId }) => refId)));
+
+    for (const id of DISLIKE_SUGGESTION_IDS) {
+      expect(used.has(id)).toBe(true);
     }
   });
 

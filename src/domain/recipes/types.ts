@@ -109,6 +109,16 @@ export interface Recipe {
   difficulty: RecipeDifficulty;
   /** Nombre de portions que produit la recette entière. */
   servings: number;
+  /**
+   * Illustration de la recette. **Prévue, non branchée.**
+   *
+   * La spécification en prévoit une (PHASES_6_A_10 §7.6) mais aucune source
+   * d'images n'est arrêtée : ni banque, ni droits, ni format. Le champ existe
+   * pour que l'ajouter ne demande pas de retoucher le modèle ; aucun écran ne
+   * le lit aujourd'hui, et aucune recette du catalogue ne le renseigne. La
+   * décision revient au produit.
+   */
+  imageUrl?: string;
 }
 
 /**

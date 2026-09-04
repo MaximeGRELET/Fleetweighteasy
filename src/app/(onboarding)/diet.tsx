@@ -6,6 +6,7 @@ import { StepScreen } from '@/components/onboarding/step-screen';
 import { Button, Chip, OptionCard, Text, TextField } from '@/components/ui';
 import type { DietType } from '@/domain/profile/types';
 import { ALLERGEN_CHOICES } from '@/domain/recipes/allergens';
+import { COMMON_DISLIKE_SUGGESTIONS } from '@/domain/recipes/content/ingredients';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { nextStep, onboardingRoute, stepProgress } from '@/lib/onboarding-steps';
 
@@ -32,7 +33,15 @@ const DIETS: { value: DietType; label: string; description: string }[] = [
  */
 const COMMON_ALLERGIES = ALLERGEN_CHOICES;
 
-const COMMON_DISLIKES = ['Coriandre', 'Champignons', 'Olives', 'Foie', 'Chou', 'Anchois'];
+/**
+ * Aliments détestés proposés — pris dans les ingrédients que les recettes
+ * utilisent vraiment (Phase 7).
+ *
+ * Les suggestions précédentes ne correspondaient à aucun ingrédient du
+ * catalogue : les cocher n'écartait aucune recette. Le champ libre reste
+ * disponible pour tout le reste.
+ */
+const COMMON_DISLIKES = COMMON_DISLIKE_SUGGESTIONS;
 
 /**
  * Écran 8 — alimentation.

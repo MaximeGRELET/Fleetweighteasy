@@ -65,6 +65,8 @@ Valeurs pour 100 g (ou 100 ml pour les liquides), dans l'état indiqué.
 | `curry_spices` | Épices curry | — | 0 | 0 | 0 | 0 | — | — |
 | `chia_seeds` | Graines de chia | — | 486 | 17 | 42 | 31 | — | — |
 
+> ⚠️ **La colonne « exclut régimes » n'est pas utilisée par le code, et elle était incomplète :** ni le poulet ni le bœuf n'y excluaient `pescatarian`, alors qu'un pescatarien ne mange pas de viande. Le code attribue à chaque ingrédient une **origine** (`plant`, `honey`, `dairy`, `egg`, `fish`, `meat`) et en déduit les exclusions — une origine se vérifie d'un coup d'œil, une liste se recopie et s'oublie. Le miel y est classé d'origine animale, donc exclu du régime végétalien, ce que la colonne ne faisait pas.
+>
 > Table volontairement limitée aux ingrédients des 22 recettes. À étendre au fil du catalogue. Les valeurs sont des ordres de grandeur de référence : **à confirmer à l'intégration** avec une base officielle (USDA / Ciqual pour la France).
 
 ---
@@ -72,6 +74,8 @@ Valeurs pour 100 g (ou 100 ml pour les liquides), dans l'état indiqué.
 ## 2. Les 22 recettes
 
 > Format : ingrédients (id + quantité en g/ml, dans l'état de la table) puis étapes. La nutrition par portion est calculée par le code. `servings` indiqué pour chaque recette.
+>
+> **Les libellés « régimes » ci-dessous sont indicatifs, pour la relecture.** Le code ne les lit pas : il **dérive** la compatibilité de l'origine des ingrédients (`src/domain/recipes/diet.ts`), ce qui garantit qu'ajouter une recette ne peut pas introduire d'oubli. Un écart entre un libellé et la dérivation est une erreur du libellé.
 
 ### PETITS-DÉJEUNERS
 
@@ -84,7 +88,7 @@ Valeurs pour 100 g (ou 100 ml pour les liquides), dans l'état indiqué.
   3. Termine par un filet de miel. C'est prêt.
 
 #### 2. Porridge protéiné banane-cannelle
-- **id :** `porridge_banana` · **repas :** breakfast · **régimes :** vegetarian (véganisable avec soja) · **tags :** high_fiber, comfort · **difficulté :** easy · **temps :** 10 min · **portions :** 1
+- **id :** `porridge_banana` · **repas :** breakfast · **régimes :** vegetarian, pescatarian, flexitarian, omnivore *(véganisable en remplaçant lait et whey par du soja et de la protéine de pois)* · **tags :** high_fiber, comfort · **difficulté :** easy · **temps :** 10 min · **portions :** 1
 - **Ingrédients :** `rolled_oats` 50 g, `milk_semi` 200 ml, `banana` 100 g, `protein_powder_whey` 20 g
 - **Étapes :**
   1. Fais chauffer les flocons avec le lait à feu doux, en remuant, 5 min.
@@ -231,7 +235,7 @@ Valeurs pour 100 g (ou 100 ml pour les liquides), dans l'état indiqué.
   2. Trempe dans le beurre de cacahuète. (⚠ contient arachides)
 
 #### 20. Smoothie protéiné vert
-- **id :** `green_protein_smoothie` · **repas :** snack, breakfast · **régimes :** vegan (avec protéine de pois), végétarien · **tags :** high_protein, no_cook, fresh · **difficulté :** easy · **temps :** 5 min · **portions :** 1
+- **id :** `green_protein_smoothie` · **repas :** snack, breakfast · **régimes :** vegan, vegetarian, pescatarian, flexitarian, omnivore · **tags :** high_protein, no_cook, fresh · **difficulté :** easy · **temps :** 5 min · **portions :** 1
 - **Ingrédients :** `soy_milk` 250 ml, `banana` 100 g, `spinach` 30 g, `protein_powder_pea` 25 g
 - **Étapes :**
   1. Mets tous les ingrédients au blender.

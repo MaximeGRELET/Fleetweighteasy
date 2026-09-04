@@ -241,8 +241,9 @@ officiellement fausse : il ne remplace pas Ciqual.
 1. **`EXPO_PUBLIC_OFF_CONTACT`** doit contenir une **adresse réellement surveillée** avant toute mise en service. C'est le canal par lequel Open Food Facts prévient avant de bloquer. Un placeholder = risque de blocage silencieux en prod. _(En dev, ton email personnel suffit.)_
 2. **Validation santé par un professionnel** avant la prod : planchers caloriques, plafond de rythme, seuils d'IMC, et les messages sensibles (plateau, reprise après écart, faim). Rappelé dans le README.
 3. **Conseil juridique ODbL** (Open Food Facts, clause share-alike) avant tout usage commercial.
-4. **Vérifier les valeurs nutritionnelles** des recettes/ingrédients avec la base Ciqual (France) au moment de la Phase 7.
+4. 🚧 **BLOQUANT AVANT PROD — vérifier les valeurs nutritionnelles** des recettes et de la table d'ingrédients avec la base Ciqual (France). **Prérequis à toute mise en service auprès de vrais utilisateurs**, et non une tâche de phase de développement : la Phase 7 est livrée, mais le catalogue ne doit pas être exposé à des utilisateurs réels tant que ce contrôle n'a pas eu lieu. **Raison :** le snapshot nutritionnel est immuable par conception (PHASE_2 §2.4). Une entrée de journal fige les valeurs à l'ajout, et corriger la table plus tard **ne rectifiera pas** les entrées déjà écrites — l'historique d'un utilisateur garderait indéfiniment des valeurs provisoires. Il n'y a pas de rattrapage possible après coup, seulement avant. Détail de ce qui en dépend et de ce qui n'en dépend pas : section « Ce qui dépend de la vérification Ciqual ».
 5. **Nom définitif du produit** (provisoire actuel : FleetWeightEasy) — centralisé, renommage indolore.
+6. **Source des images de recettes** — décision produit en attente. La spec §7.6 prévoit une illustration par recette, mais rien n'est arrêté : banque d'images, droits d'usage, format, hébergement. Le champ `imageUrl` existe dans le modèle (`src/domain/recipes/types.ts`), documenté comme **prévu mais non branché** — aucun écran ne le lit, aucune recette ne le renseigne. Rien à implémenter tant que la source n'est pas définie.
 
 ---
 
@@ -274,22 +275,39 @@ ajout au journal avec snapshot figé et mise à l'échelle des portions.
 - [ ] **Contraste en thème sombre** de la mention « Contient : … », affichée en ton `caution`.
 - [ ] **Parcours complet** : tableau du jour → recettes → détail → ajout → retour au journal, et
       vérifier que l'entrée ajoutée apparaît bien au bon repas.
-- [ ] **Écran d'onboarding « alimentation »** : les puces d'allergies ont changé, vérifier qu'elles
-      tiennent bien en largeur avec « Fruits à coque » et « Crustacés ».
+      **Régression à revérifier — écran d'onboarding « alimentation » (Phase 3)**
+
+Cet écran avait été validé sur appareil en Phase 3. La Phase 7 l'a **modifié** : les puces
+d'allergies viennent désormais de `ALLERGEN_CHOICES`, et celles d'aliments détestés de
+`COMMON_DISLIKE_SUGGESTIONS`. Il ne suffit donc pas de valider les nouveaux écrans de recettes.
+
+- [ ] **Largeur et lisibilité des puces d'allergènes** : « Fruits à coque » et « Crustacés » sont
+      les plus longues — vérifier qu'elles ne débordent pas et que le retour à la ligne reste
+      propre sur un écran étroit.
+- [ ] **Présence du sésame** dans les propositions : il manquait avant la Phase 7, c'est un
+      allergène réglementé et le houmous en contient.
+- [ ] **Les neuf allergènes sont bien là** : Gluten, Lait, Œufs, Fruits à coque, Arachides, Soja,
+      Crustacés, Poisson, Sésame.
+- [ ] **Nouvelles puces d'aliments détestés** (Oignon, Poivron, Tofu ferme, Brocoli, Épinards
+      frais, Avocat) : vérifier la lisibilité, « Épinards frais » étant la plus longue.
+- [ ] **Le champ libre d'allergie** affiche bien qu'il ne sert pas au filtrage.
+- [ ] **Un profil déjà créé** avant cette phase s'ouvre sans perdre ses allergies déjà cochées.
 
 ---
 
 ## Points relevés en Phase 7 (à arbitrer, non bloquants)
 
-- **Le catalogue rédigé déclare des régimes par recette de façon inégale** : la recette 2 sous-déclare
-  (« vegetarian » seul, alors qu'elle convient aussi aux pescatariens), la recette 20 mélange clés
-  anglaises et mot français. Ces libellés ne sont pas utilisés par le code — la dérivation fait foi —
-  mais ils restent trompeurs à la lecture du document.
-- **Un aliment détesté absent de la table d'ingrédients n'exclut rien.** « Coriandre », proposé par
-  l'onboarding, n'est ingrédient d'aucune recette : le déclarer n'a aucun effet. Sans conséquence de
-  sécurité, mais l'utilisateur peut s'attendre à autre chose.
-- **Le catalogue ne porte aucune image** alors que la spec §7.6 en prévoit. Le modèle laisse la
-  place (`imageUrl` dans la spec) mais aucune source d'images n'est définie.
+- ✅ **Régimes déclarés inégalement dans le catalogue rédigé** — corrigé. Les recettes 2 et 20
+  listent désormais leurs régimes compatibles au complet, et une note rappelle que ces libellés sont
+  indicatifs : c'est la dérivation depuis les ingrédients qui fait foi.
+- ✅ **Aliments détestés orphelins** — corrigé, et le problème était plus large que « coriandre » :
+  **les six** suggestions (coriandre, champignons, olives, foie, chou, anchois) ne correspondaient à
+  aucun ingrédient du catalogue, si bien que les cocher n'écartait jamais rien. Elles viennent
+  maintenant de la table d'ingrédients, et un test garantit que chaque suggestion peut réellement
+  exclure quelque chose. Une saisie libre reste conservée au profil même si aucune recette ne la
+  contient — c'est la préférence de la personne, pas un critère.
+- **Images de recettes** : décision produit en attente (voir « Actions qui te reviennent », point 6).
+  Le champ `imageUrl` est prévu dans le modèle mais délibérément non branché.
 
 ---
 

@@ -415,6 +415,32 @@ export const INGREDIENTS: readonly IngredientRef[] = [
   },
 ];
 
+/**
+ * Ingrédients fréquemment mis de côté, proposés à l'onboarding.
+ *
+ * Choisis parmi ceux que le catalogue utilise réellement : les six suggestions
+ * précédentes — coriandre, champignons, olives, foie, chou, anchois — ne
+ * correspondaient à **aucun** ingrédient, si bien que les cocher n'écartait
+ * jamais rien. Les libellés sont lus dans la table plutôt que recopiés, pour
+ * qu'ils ne puissent pas s'en écarter.
+ *
+ * Une saisie libre reste évidemment possible : elle est conservée au profil
+ * même quand aucune recette ne la contient — c'est la préférence de la
+ * personne, pas un critère de filtrage.
+ */
+export const DISLIKE_SUGGESTION_IDS: readonly string[] = [
+  'onion',
+  'bell_pepper',
+  'tofu_firm',
+  'broccoli_raw',
+  'spinach',
+  'avocado',
+];
+
+export const COMMON_DISLIKE_SUGGESTIONS: readonly string[] = INGREDIENTS.filter((ingredient) =>
+  DISLIKE_SUGGESTION_IDS.includes(ingredient.id),
+).map((ingredient) => ingredient.name);
+
 /** Index par identifiant, construit une fois. */
 export const INGREDIENTS_BY_ID: ReadonlyMap<string, IngredientRef> = new Map(
   INGREDIENTS.map((ingredient) => [ingredient.id, ingredient]),
