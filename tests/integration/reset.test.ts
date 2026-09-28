@@ -1,3 +1,4 @@
+import { syncState } from '@/data/db/schema';
 import { listDirty } from '@/data/db/sync-meta';
 import { createRepositories, type Repositories } from '@/data/repositories/factory';
 import { resetAllLocalData } from '@/data/reset';
@@ -19,7 +20,7 @@ import {
  * c'est ce qui garantit que `sync_meta` est peuplée elle aussi, comme elle le
  * serait après un usage réel de l'app.
  */
-function seedEverything(repositories: Repositories): void {
+function seedEverything(repositories: Repositories, database: TestDatabase): void {
   repositories.consent.grant(PRIVACY_POLICY_VERSION);
   repositories.profile.save(buildStoredProfile());
 
@@ -56,6 +57,9 @@ function seedEverything(repositories: Repositories): void {
     },
     estimatedKcalBurned: 290,
   });
+
+  // Curseur de réception, comme après une première synchronisation.
+  database.db.insert(syncState).values({ id: 1, pullCursor: '42' }).run();
 }
 
 describe('resetAllLocalData', () => {
@@ -72,7 +76,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('part d’une base réellement remplie : aucune table applicative n’est vide', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
 
     const empty = Object.entries(countRowsByTable(database))
       .filter(([, total]) => total === 0)
@@ -82,7 +86,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('vide toutes les tables applicatives, sans en oublier une', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
 
     resetAllLocalData(database.db);
 
@@ -96,13 +100,14 @@ describe('resetAllLocalData', () => {
       meal: 0,
       profile: 0,
       sync_meta: 0,
+      sync_state: 0,
       weight_entry: 0,
       workout_log_entry: 0,
     });
   });
 
   it('conserve le schéma : les tables existent toujours, seul leur contenu a disparu', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
     const before = listTableNames(database);
 
     resetAllLocalData(database.db);
@@ -111,7 +116,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('ne touche pas au journal des migrations, sinon l’app ne rouvrirait plus', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
 
     resetAllLocalData(database.db);
 
@@ -120,7 +125,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('remet l’app dans l’état d’un premier lancement', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
 
     resetAllLocalData(database.db);
 
@@ -144,7 +149,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('ne laisse aucune pierre tombale : rien à synchroniser après un effacement', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
     expect(listDirty(database.db).length).toBeGreaterThan(0);
 
     resetAllLocalData(database.db);
@@ -156,7 +161,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('laisse une base utilisable : on peut tout resaisir derrière', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
     resetAllLocalData(database.db);
 
     repositories.consent.grant(PRIVACY_POLICY_VERSION);
@@ -178,7 +183,7 @@ describe('resetAllLocalData', () => {
   });
 
   it('s’atteint aussi par la fabrique de repositories, sans SQL dans l’UI', () => {
-    seedEverything(repositories);
+    seedEverything(repositories, database);
 
     repositories.maintenance.resetAllLocalData();
 

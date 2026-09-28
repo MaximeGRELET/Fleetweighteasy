@@ -298,3 +298,20 @@ export const syncMeta = sqliteTable(
 );
 
 export type SyncEntityType = (typeof SYNC_ENTITY_TYPES)[number];
+
+/**
+ * État de la synchronisation, sur **une seule ligne** (`id = 1`).
+ *
+ * `pullCursor` est le curseur **fourni par le serveur** : la position du
+ * dernier changement déjà tiré. Opaque côté app. Il ne s'appuie jamais sur
+ * l'horloge de l'appareil, qui peut dériver ou être réglée à la main : une
+ * lecture « depuis telle heure » pourrait alors manquer des changements.
+ */
+export const syncState = sqliteTable(
+  'sync_state',
+  {
+    id: integer('id').primaryKey(),
+    pullCursor: text('pull_cursor'),
+  },
+  (table) => [check('sync_state_single_row', sql`${table.id} = 1`)],
+);

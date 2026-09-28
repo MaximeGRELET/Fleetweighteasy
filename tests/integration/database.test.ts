@@ -25,6 +25,7 @@ describe('migrations', () => {
         'meal',
         'profile',
         'sync_meta',
+        'sync_state',
         'weight_entry',
         'workout_log_entry',
       ]),

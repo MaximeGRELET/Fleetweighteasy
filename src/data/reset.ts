@@ -8,6 +8,7 @@ import {
   meal,
   profile,
   syncMeta,
+  syncState,
   weightEntry,
   workoutLogEntry,
 } from './db/schema';
@@ -53,6 +54,7 @@ const RESETTABLE_TABLES: readonly SQLiteTable[] = [
   profile,
   consent,
   syncMeta,
+  syncState,
 ];
 
 /**
