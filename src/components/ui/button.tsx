@@ -10,6 +10,8 @@ export interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'quiet';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** Pour un libellé qui ne se lit pas seul (« − », « + ») ; le libellé sinon. */
+  accessibilityLabel?: string;
   testID?: string;
 }
 
@@ -19,6 +21,7 @@ export function Button({
   variant = 'primary',
   disabled = false,
   style,
+  accessibilityLabel,
   testID,
 }: ButtonProps) {
   const theme = useTheme();
@@ -35,6 +38,7 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled }}
+      accessibilityLabel={accessibilityLabel}
       testID={testID}
       disabled={disabled}
       onPress={onPress}

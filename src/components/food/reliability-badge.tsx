@@ -31,11 +31,7 @@ export function ReliabilityBadge({ verified, source, testID }: ReliabilityBadgeP
     <View
       testID={testID}
       accessibilityRole="text"
-      accessibilityLabel={
-        isCollaborative
-          ? 'Donnée collaborative, à vérifier sur l’étiquette'
-          : 'Aliment que tu as saisi toi-même'
-      }
+      accessibilityLabel={describeReliability({ verified, source })}
       style={[
         styles.badge,
         {
@@ -50,6 +46,19 @@ export function ReliabilityBadge({ verified, source, testID }: ReliabilityBadgeP
       </Text>
     </View>
   );
+}
+
+/**
+ * Version parlée du badge. Exportée pour les éléments cliquables qui le
+ * contiennent : leur étiquette masque celle du badge, ils doivent la reprendre.
+ */
+export function describeReliability({
+  verified,
+  source,
+}: Pick<ReliabilityBadgeProps, 'verified' | 'source'>): string {
+  return source === 'off' && !verified
+    ? 'Donnée collaborative, à vérifier sur l’étiquette'
+    : 'Aliment que tu as saisi toi-même';
 }
 
 const styles = StyleSheet.create({

@@ -28,8 +28,13 @@ export function OptionCard({
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      accessibilityLabel={label}
+      // `checked` pour Android, `selected` pour iOS : voir `Chip`.
+      accessibilityState={{ checked: selected, selected }}
+      // L'étiquette remplace le texte des enfants : la description et la
+      // recommandation doivent y figurer pour être entendues.
+      accessibilityLabel={[label, recommended ? 'recommandé' : undefined, description]
+        .filter(Boolean)
+        .join('. ')}
       testID={testID}
       onPress={onPress}
       style={[

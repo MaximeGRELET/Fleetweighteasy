@@ -103,7 +103,9 @@ export default function BiometricsScreen() {
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Date de naissance"
+          // La date choisie fait partie de l'étiquette : sans elle, le lecteur
+          // d'écran n'annoncerait que le nom du champ, jamais sa valeur.
+          accessibilityLabel={`Date de naissance : ${draft.birthDate ? formatIsoDate(draft.birthDate) : 'non renseignée'}`}
           testID="birthdate-trigger"
           onPress={() => setPickerVisible(true)}
           style={[

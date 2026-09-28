@@ -132,6 +132,7 @@ export default function RecipeDetailScreen() {
             <Button
               label="−"
               variant="secondary"
+              accessibilityLabel="Une demi-portion de moins"
               onPress={() => setPortions((current) => Math.max(0.5, current - 0.5))}
               testID="recipe-portions-less"
             />
@@ -141,6 +142,7 @@ export default function RecipeDetailScreen() {
             <Button
               label="+"
               variant="secondary"
+              accessibilityLabel="Une demi-portion de plus"
               onPress={() => setPortions((current) => current + 0.5)}
               testID="recipe-portions-more"
             />
