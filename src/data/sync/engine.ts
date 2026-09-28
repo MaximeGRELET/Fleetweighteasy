@@ -183,15 +183,14 @@ function sortForApply(changes: EntityChange[]): EntityChange[] {
 /**
  * La version locale l'emporte-t-elle sur celle reçue ?
  *
- * À horodatage égal, la version reçue gagne, sauf modification locale en
- * attente d'envoi. Sans cette règle, deux appareils ayant écrit à la même
- * milliseconde garderaient chacun la leur, alors que le serveur, lui, n'en a
- * retenu qu'une : ils ne convergeraient jamais.
+ * Seulement si elle est strictement plus récente. À horodatage égal, c'est la
+ * version du serveur qui reste : il refuse lui-même toute version qui n'est pas
+ * strictement plus récente que la sienne, donc la locale ne passerait jamais.
+ * S'y ranger est la seule façon pour deux appareils ayant écrit à la même
+ * milliseconde de converger.
  */
 function localWins(local: SyncMetaRecord, change: EntityChange): boolean {
-  return (
-    local.updatedAt > change.updatedAt || (local.dirty && local.updatedAt === change.updatedAt)
-  );
+  return local.updatedAt > change.updatedAt;
 }
 
 /** Applique une version reçue. Renvoie vrai si la base locale a changé. */
@@ -244,10 +243,9 @@ function resolveSameDayWeighing(
   row: Record<string, unknown>,
   at: Date,
 ): boolean {
-  const date = row.date;
-  if (typeof date !== 'string') {
-    return true;
-  }
+  // Une pesée sans date échouera à l'insertion, sur la contrainte NOT NULL :
+  // bruyamment, ce qui est voulu. Rien à décider ici en attendant.
+  const date = String(row.date);
 
   const sameDay = tx
     .select({ id: weightEntry.id })

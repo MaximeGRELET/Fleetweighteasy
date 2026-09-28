@@ -1,5 +1,5 @@
-import { SYNC_ENTITY_TYPES, syncState } from '@/data/db/schema';
-import { getSyncMeta, listDirty } from '@/data/db/sync-meta';
+import { SYNC_ENTITY_TYPES, syncState, weightEntry } from '@/data/db/schema';
+import { getSyncMeta, listDirty, markDirty } from '@/data/db/sync-meta';
 import { createRepositories, type Repositories } from '@/data/repositories/factory';
 import { createSyncEngine, PUSH_BATCH_SIZE, type SyncEngine } from '@/data/sync';
 import { APPLY_ORDER } from '@/data/sync/registry';
@@ -486,6 +486,93 @@ describe('moteur de synchronisation', () => {
       const received = tablet.repositories.foodLog.getById(entry.id);
       expect(received?.snapshot).toEqual(entry.snapshot);
       expect(received?.foodItemId).toBeUndefined();
+    });
+  });
+
+  describe('cas limites', () => {
+    it('décrit comme supprimée une entité marquée modifiée mais absente de sa table', async () => {
+      const phone = createDevice('phone');
+      markDirty(phone.database.db, 'meal', 'fantome', phone.database.currentNow());
+
+      await phone.engine.sync();
+
+      expect(remote.get('meal', 'fantome')).toMatchObject({
+        deletedAt: phone.database.currentNow().toISOString(),
+      });
+    });
+
+    /**
+     * Deux appareils qui écrivent à la même milliseconde : le serveur ne
+     * retient que la première version reçue et refuse l'autre. L'appareil
+     * perdant doit s'y ranger, sinon les deux divergent pour toujours.
+     */
+    it('se range à la version du serveur à horodatage égal', async () => {
+      const phone = createDevice('phone');
+      const tablet = createDevice('tablet');
+      phone.repositories.profile.save(buildStoredProfile({ currentWeightKg: 71 }));
+      tablet.repositories.profile.save(buildStoredProfile({ currentWeightKg: 70.5 }));
+
+      await phone.engine.sync();
+      await tablet.engine.sync();
+
+      expect(tablet.repositories.profile.get()?.currentWeightKg).toBe(71);
+      expect(listDirty(tablet.database.db)).toEqual([]);
+    });
+
+    it('supprime une entité reçue sans contenu, même sans date de suppression explicite', async () => {
+      const tablet = createDevice('tablet');
+      const entry = tablet.repositories.weight.upsertForDate({ date: DAY, weightKg: 72 });
+      await tablet.engine.sync();
+      const later = new Date(START.getTime() + 60_000).toISOString();
+
+      remote.seed({ entityType: 'weight_entry', entityId: entry.id, updatedAt: later });
+      await tablet.engine.sync();
+
+      expect(tablet.repositories.weight.getById(entry.id)).toBeUndefined();
+      expect(getSyncMeta(tablet.database.db, 'weight_entry', entry.id)?.deletedAt).toBe(later);
+    });
+
+    it('écarte une pesée locale sans trace de synchro au profit de la pesée reçue', async () => {
+      const tablet = createDevice('tablet');
+      tablet.database.db.insert(weightEntry).values({ id: 'local', date: DAY, weightKg: 70 }).run();
+      remote.seed({
+        entityType: 'weight_entry',
+        entityId: 'recue',
+        updatedAt: START.toISOString(),
+        row: { id: 'recue', date: DAY, weightKg: 71.5, note: null },
+      });
+
+      await tablet.engine.sync();
+
+      expect(tablet.repositories.weight.getHistory().map((w) => w.id)).toEqual(['recue']);
+    });
+
+    it('détache une entrée dont le repas n’existe plus nulle part', async () => {
+      const tablet = createDevice('tablet');
+      remote.seed({
+        entityType: 'food_log_entry',
+        entityId: 'orphan-meal',
+        updatedAt: START.toISOString(),
+        row: {
+          id: 'orphan-meal',
+          date: DAY,
+          mealType: 'dinner',
+          foodItemId: null,
+          mealId: 'meal-disparu',
+          quantityG: 300,
+          nameSnapshot: 'Bol du soir',
+          kcalSnapshot: 420,
+          proteinGSnapshot: 20,
+          carbsGSnapshot: 50,
+          fatGSnapshot: 12,
+          fiberGSnapshot: null,
+          loggedAt: START.toISOString(),
+        },
+      });
+
+      await tablet.engine.sync();
+
+      expect(tablet.repositories.foodLog.getById('orphan-meal')?.mealId).toBeUndefined();
     });
   });
 
