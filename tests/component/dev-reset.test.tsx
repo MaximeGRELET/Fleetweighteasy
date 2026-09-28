@@ -1,7 +1,7 @@
 import { fireEvent, renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
-import WelcomeScreen from '@/app/(onboarding)/index';
+import WelcomeScreen from '@/app/(onboarding)/welcome';
 import RootScreen from '@/app/index';
 import { useDevDataReset } from '@/hooks/use-dev-reset';
 import { RepositoriesProvider } from '@/hooks/use-repositories';
@@ -87,7 +87,7 @@ describe('panneau de développement', () => {
     await fireEvent.press(screen.getByTestId('dev-reset'));
 
     // L'écran monté se rerend de lui-même : l'onboarding n'est plus terminé.
-    expect(screen.getByTestId('redirect').props.children).toBe('/(onboarding)');
+    expect(screen.getByTestId('redirect').props.children).toBe('/(onboarding)/welcome');
     expect(harness.repositories.profile.hasCompletedOnboarding()).toBe(false);
     expect(harness.repositories.consent.hasGranted(PRIVACY_POLICY_VERSION)).toBe(false);
     // La navigation repasse par l'aiguillage racine, pas directement par

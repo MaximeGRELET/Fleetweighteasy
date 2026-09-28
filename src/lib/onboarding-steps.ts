@@ -15,7 +15,7 @@ export type OnboardingStepId =
   | 'biometrics'
   | 'target-weight'
   | 'activity'
-  | 'training'
+  | 'sport-habits'
   | 'diet'
   | 'rate'
   | 'summary'
@@ -26,7 +26,7 @@ const ALL_STEPS: readonly OnboardingStepId[] = [
   'biometrics',
   'target-weight',
   'activity',
-  'training',
+  'sport-habits',
   'diet',
   'rate',
   'summary',

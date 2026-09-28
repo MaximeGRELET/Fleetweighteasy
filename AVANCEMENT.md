@@ -297,6 +297,12 @@ affiché en attendant, sur l'accueil sport comme sur la séance.
     explicitement classée comme propre à l'appareil.
 - **Moteur de synchro** (#17) : construit et testé, puis mis en sommeil par la décision de rester
   local. Il n'entre pas dans l'app.
+- **Bug corrigé en test réel (#30)** : la fin de l'onboarding ramenait à son propre début.
+  L'accueil de l'onboarding et le tableau du jour partageaient l'URL `/` (un groupe entre
+  parenthèses n'ajoute rien au chemin), de même que l'étape « entraînement » et l'écran Sport
+  (`/training`). Les deux étapes s'appellent désormais `welcome` et `sport-habits`. Des tests de
+  navigation tournent maintenant avec le **vrai** routeur, là où les tests d'écran se contentent
+  d'un espion, et un test structurel refuse que deux écrans de `src/app` partagent une URL.
 - `expo-sharing` ajouté (inclus dans Expo Go). Le sélecteur de fichiers vient d'`expo-file-system`,
   déjà présent.
 - 1 300 tests au vert, lint et typecheck propres.

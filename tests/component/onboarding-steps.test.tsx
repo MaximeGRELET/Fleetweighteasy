@@ -4,8 +4,8 @@ import ActivityScreen from '@/app/(onboarding)/activity';
 import DietScreen from '@/app/(onboarding)/diet';
 import RateScreen from '@/app/(onboarding)/rate';
 import TargetWeightScreen from '@/app/(onboarding)/target-weight';
-import TrainingScreen from '@/app/(onboarding)/training';
-import WelcomeScreen from '@/app/(onboarding)/index';
+import TrainingScreen from '@/app/(onboarding)/sport-habits';
+import WelcomeScreen from '@/app/(onboarding)/welcome';
 import { calculateCalorieTarget, weeklyRateToDeficitKcal } from '@/domain/nutrition/energy';
 import { getMaxWeeklyRateKg } from '@/domain/nutrition/safety';
 import { minimumHealthyWeightKg } from '@/domain/profile/bmi';
@@ -367,7 +367,7 @@ describe('écran d’activité', () => {
     await fireEvent.press(screen.getByTestId('step-primary'));
 
     expect(useOnboardingStore.getState().draft.activityLevel).toBe('moderately_active');
-    expect(routerMock.push).toHaveBeenCalledWith('/(onboarding)/training');
+    expect(routerMock.push).toHaveBeenCalledWith('/(onboarding)/sport-habits');
   });
 
   it('rappelle que le sport habituel est déjà compté', async () => {
