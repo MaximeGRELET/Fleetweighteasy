@@ -404,6 +404,13 @@ describe('écran d’entraînement', () => {
     expect(useOnboardingStore.getState().draft.trainingDaysPerWeek).toBe(0);
   });
 
+  it('annonce le nombre de jours comme un choix exclusif, les pratiques comme multiples', async () => {
+    const screen = await harness.renderScreen(<TrainingScreen />);
+
+    expect(screen.getByTestId('training-days-3').props.accessibilityRole).toBe('radio');
+    expect(screen.getByTestId('practice-strength').props.accessibilityRole).toBe('checkbox');
+  });
+
   it('ne demande le lieu qu’à ceux qui font de la musculation', async () => {
     const screen = await harness.renderScreen(<TrainingScreen />);
 

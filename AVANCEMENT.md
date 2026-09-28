@@ -296,7 +296,7 @@ affiché en attendant, sur l'accueil sport comme sur la séance.
 - **Search-a-licious** : mapping validé sur appareil au premier essai, mais garder un œil si la forme des réponses évolue.
 - **Quotas OFF** : calibrés à 80 lectures / 8 recherches par minute (sous les 100/10 documentés). À revérifier contre la politique courante.
 - **Signal de fiabilité** : `verified` est toujours `false` pour OFF (choix sémantique assumé). Vérifier que l'utilisateur a _un_ autre signal de fiabilité des données (complétude, mention « données communautaires »).
-- **Accessibilité** : les puces de choix de repas utilisent un rôle `checkbox` pour un choix exclusif (devrait être `radio`). À corriger en passe d'accessibilité groupée (Phase 10).
+- ~~**Accessibilité** : puces de choix exclusif annoncées en `checkbox`.~~ Corrigé (#6) : `Chip` prend un `role` (`checkbox`, `radio` ou `button`). Repas, portion et nombre de jours d'entraînement sont en `radio` dans un `radiogroup` ; les repas cibles du rejeu sont des boutons.
 - **Trou de contenu conseils (Phase 6)** : aucune brique `protein` pour les régimes `flexitarian` et `pescatarian` — ces profils ne reçoivent aucun conseil sur ce thème. Tracé aussi dans `files/BRIQUES_CONSEIL_REDIGEES.md`. **À rédiger avant la Phase 10.**
 - **Seuils inventés en Phase 6**, faute de spécification : « écart récent » (dépassement de 25 % du budget sur les deux derniers jours) et « nouvel utilisateur » (sept jours). Documentés et isolés dans `domain/advice/context.ts`, faciles à déplacer si l'usage réel les dément.
 
