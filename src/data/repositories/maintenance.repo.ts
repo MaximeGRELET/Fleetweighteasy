@@ -13,8 +13,9 @@ import type { RepositoryContext } from './context';
  */
 export interface MaintenanceRepository {
   /**
-   * Efface toutes les données locales : profil, consentement, journal, poids,
-   * séances, cache d'aliments, métadonnées de synchronisation.
+   * Efface toutes les données locales : profil et historique des objectifs,
+   * consentement, journal, poids, séances, cache d'aliments, métadonnées de
+   * synchronisation.
    *
    * Le schéma est conservé — seul son contenu disparaît. Après appel, l'app est
    * dans l'état d'une première installation : `hasCompletedOnboarding()` est

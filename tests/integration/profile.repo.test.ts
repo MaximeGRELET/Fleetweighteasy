@@ -1,10 +1,11 @@
-import { getSyncMeta } from '@/data/db/sync-meta';
+import { getSyncMeta, listDirty } from '@/data/db/sync-meta';
 import { DataIntegrityError } from '@/data/errors';
 import { createConsentRepository, type ConsentRepository } from '@/data/repositories/consent.repo';
 import { createProfileRepository, type ProfileRepository } from '@/data/repositories/profile.repo';
-import { profile as profileTable } from '@/data/db/schema';
+import { goalChangeEvent, profile as profileTable } from '@/data/db/schema';
 import { toUserProfile } from '@/data/types';
 import { calculateCalorieTarget } from '@/domain/nutrition/energy';
+import { detectRiskSignals, getMaxWeeklyRateKg } from '@/domain/nutrition/safety';
 
 import { buildStoredProfile } from './helpers/fixtures';
 import { createTestDatabase, type TestDatabase } from './helpers/test-db';
@@ -148,6 +149,107 @@ describe('profileRepo', () => {
       .run();
 
     expect(() => profileRepo.get()).toThrow(/profile.dislikes/);
+  });
+});
+
+describe('profileRepo — historique des objectifs', () => {
+  let database: TestDatabase;
+  let profileRepo: ProfileRepository;
+
+  beforeEach(() => {
+    database = createTestDatabase();
+    profileRepo = createProfileRepository(database.context);
+  });
+
+  afterEach(() => {
+    database.close();
+  });
+
+  it('est vide tant qu’aucun profil n’a été enregistré', () => {
+    expect(profileRepo.getGoalHistory()).toEqual([]);
+  });
+
+  it('enregistre l’objectif défini à l’onboarding', () => {
+    profileRepo.save(buildStoredProfile({ targetWeightKg: 65, weeklyRateKg: 0.5 }));
+
+    expect(profileRepo.getGoalHistory()).toEqual([
+      {
+        at: database.currentNow().toISOString(),
+        sex: 'female',
+        currentWeightKg: 72.5,
+        heightCm: 168,
+        targetWeightKg: 65,
+        requestedWeeklyRateKg: 0.5,
+      },
+    ]);
+  });
+
+  it('ajoute un événement à chaque révision, sans réécrire les précédents', () => {
+    profileRepo.save(buildStoredProfile({ targetWeightKg: 65 }));
+    database.advanceMinutes(60 * 24);
+    profileRepo.save(buildStoredProfile({ targetWeightKg: 62 }));
+    database.advanceMinutes(60 * 24);
+    profileRepo.save(buildStoredProfile({ targetWeightKg: 60 }));
+
+    expect(profileRepo.getGoalHistory().map((event) => event.targetWeightKg)).toEqual([65, 62, 60]);
+  });
+
+  /**
+   * Le recalcul adaptatif réécrit le profil après chaque pesée significative :
+   * ce n'est pas un choix de l'utilisateur et il ne doit pas compter comme tel.
+   */
+  it('n’ajoute rien quand seul le poids courant change', () => {
+    profileRepo.save(buildStoredProfile());
+    database.advanceMinutes(60 * 24 * 7);
+    profileRepo.save(buildStoredProfile({ currentWeightKg: 71.8, lastNotifiedWeightKg: 72.5 }));
+
+    expect(profileRepo.getGoalHistory()).toHaveLength(1);
+  });
+
+  it('conserve le rythme demandé avant plafonnement', () => {
+    const requested = 1.5;
+    expect(getMaxWeeklyRateKg(72.5)).toBeLessThan(requested);
+
+    profileRepo.save(buildStoredProfile({ weeklyRateKg: requested }));
+
+    expect(profileRepo.getGoalHistory()[0]?.requestedWeeklyRateKg).toBe(requested);
+  });
+
+  it('marque chaque événement comme à synchroniser', () => {
+    profileRepo.save(buildStoredProfile());
+
+    const [row] = database.db.select().from(goalChangeEvent).all();
+    expect(row && getSyncMeta(database.db, 'goal_change_event', row.id)).toMatchObject({
+      dirty: true,
+      updatedAt: database.currentNow().toISOString(),
+    });
+  });
+
+  it('efface l’historique avec le profil, pierres tombales comprises', () => {
+    profileRepo.save(buildStoredProfile({ targetWeightKg: 65 }));
+    database.advanceMinutes(60);
+    profileRepo.save(buildStoredProfile({ targetWeightKg: 62 }));
+    database.advanceMinutes(5);
+
+    profileRepo.clear();
+
+    expect(profileRepo.getGoalHistory()).toEqual([]);
+    const tombstones = listDirty(database.db).filter(
+      (record) => record.entityType === 'goal_change_event',
+    );
+    expect(tombstones).toHaveLength(2);
+    expect(tombstones.every((record) => record.deletedAt !== undefined)).toBe(true);
+  });
+
+  it('fournit à la détection de quoi repérer des révisions répétées', () => {
+    for (const targetWeightKg of [65, 62, 60]) {
+      profileRepo.save(buildStoredProfile({ targetWeightKg }));
+      database.advanceMinutes(60 * 24);
+    }
+
+    expect(detectRiskSignals(profileRepo.getGoalHistory())).toContain(
+      'repeatedly_lowered_target_weight',
+    );
   });
 });
 

@@ -135,6 +135,37 @@ describe('conseils', () => {
       );
     });
 
+    /**
+     * Branchement de bout en bout : les révisions passent par le repository,
+     * comme depuis l'app, et c'est l'historique qu'il a écrit qui déclenche le
+     * signal — aucun événement n'est injecté à la main.
+     */
+    it('signale un poids cible revu à la baisse à plusieurs reprises', async () => {
+      for (const targetWeightKg of [66, 64, 62]) {
+        givenProfile({ targetWeightKg });
+        harness.database.advanceMinutes(60 * 24 * 7);
+      }
+      givenEstablishedUser();
+
+      const screen = await harness.renderScreen(<RootScreen />);
+
+      expect(
+        screen.getByTestId('advice-safety-risk_repeatedly_lowered_target_weight'),
+      ).toBeTruthy();
+      expect(screen.queryByTestId(/^advice-featured-/)).toBeNull();
+    });
+
+    it('ne signale rien pour une seule révision de l’objectif', async () => {
+      givenProfile({ targetWeightKg: 66 });
+      harness.database.advanceMinutes(60 * 24 * 7);
+      givenProfile({ targetWeightKg: 64 });
+      givenEstablishedUser();
+
+      const screen = await harness.renderScreen(<RootScreen />);
+
+      expect(screen.queryByTestId(/^advice-safety-/)).toBeNull();
+    });
+
     it('n’affiche aucune bande quand aucun garde-fou n’est actif', async () => {
       givenProfile();
       givenEstablishedUser();

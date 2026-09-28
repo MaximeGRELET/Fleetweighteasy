@@ -366,25 +366,22 @@ baisse plusieurs fois, rythme systématiquement poussé au maximum. La **Phase 6
 lui manquait côté sortie — quatre messages rédigés dans `src/lib/messages/advice.ts`, et une place
 dans la bande de sécurité du moteur de conseils, testée de bout en bout.
 
-**Il lui manque toujours son entrée.** La fonction prend un `GoalChangeEvent[]` : l'historique des
-objectifs successivement définis par l'utilisateur. **Aucune table ne le conserve.** La table
-`profile` ne garde qu'une seule ligne, réécrite à chaque modification : changer de poids cible
-efface le précédent sans laisser de trace. Il n'y a donc aujourd'hui rien à donner à la fonction,
-et `useAdvice` lui passe une liste vide — explicitement, avec le commentaire qui l'explique.
+**Son entrée est en place depuis le ticket #1.** La table `goal_change_event`, en ajout seul et
+suivie par `sync_meta`, conserve les objectifs successifs que `profile` écrase. `profile.save` y
+ajoute un événement, dans la même transaction, chaque fois que le type d'objectif, le poids cible
+ou le rythme change (`hasGoalChanged`). Le recalcul adaptatif après une pesée ne touche que le poids
+courant : il n'écrit rien, pour ne pas noyer les vrais choix dans des réécritures subies.
+L'événement fige le **rythme demandé avant plafonnement**, qui n'était persisté nulle part
+ailleurs. `useAdvice` passe désormais `detectRiskSignals(profile.getGoalHistory())` à la bande de
+sécurité. Un test d'écran vérifie la chaîne de bout en bout.
 
-Ce qu'il faudra décider en Phase 9 (ou avant) :
+Restent ouverts :
 
-- **Où vit l'historique.** Une table `goal_change_event` en append-only est le candidat naturel, avec
-  son entrée `sync_meta` comme les autres.
-- **Ce qu'on y écrit.** `GoalChangeEvent` porte déjà sexe, poids courant, taille, poids cible et
-  rythme demandé **avant plafonnement** — cette dernière valeur n'est actuellement persistée nulle
-  part, alors qu'elle est ce qui permet de repérer un rythme systématiquement poussé au maximum.
-- **La rétention.** Ce sont des données de santé sensibles : leur durée de conservation et leur
-  effacement (RGPD) relèvent de la même décision que le reste de la synchro.
-
-Une fois la table en place, le branchement se réduit à une ligne dans `useAdvice` : remplacer
-`riskSignals: []` par l'appel à `detectRiskSignals`. Le reste de la chaîne est déjà écrit et
-éprouvé.
+- **`requestedDailyKcal`** : la colonne existe, mais aucun écran ne demande d'objectif calorique
+  explicite. Le signal « objectifs répétés sous le plancher » ne peut donc pas encore se déclencher.
+- **La rétention.** Ce sont des données de santé sensibles. `profile.clear()` et la
+  réinitialisation effacent l'historique avec le profil ; la durée de conservation côté serveur
+  relève de la même décision que le reste de la synchro.
 
 ---
 
@@ -392,5 +389,5 @@ Une fois la table en place, le branchement se réduit à une ligne dans `useAdvi
 
 Le groundwork est posé depuis la Phase 2 : `sync_meta` avec `dirty` / `updatedAt` / `syncedAt` /
 `deletedAt`, écrit dans la même transaction que chaque écriture métier, et les pierres tombales des
-suppressions. Les dépendances d'entrée sont listées ci-dessus — dont l'historique des objectifs
-successifs, sans lequel `detectRiskSignals` reste sans données.
+suppressions. Les dépendances d'entrée sont listées ci-dessus ; l'historique des objectifs
+successifs est désormais en place (ticket #1).

@@ -124,6 +124,42 @@ export interface GoalChangeEvent {
   requestedDailyKcal?: number;
 }
 
+/**
+ * Vrai si l'enregistrement modifie l'objectif lui-même.
+ *
+ * Seuls comptent le type d'objectif, le poids cible et le rythme : ce sont des
+ * choix de l'utilisateur. Le recalcul adaptatif réécrit le profil à chaque
+ * demi-kilo perdu sans que rien n'ait été choisi ; l'historiser gonflerait
+ * l'historique d'événements que la détection lirait à tort comme des révisions.
+ */
+export function hasGoalChanged(previous: UserProfile | undefined, next: UserProfile): boolean {
+  return (
+    previous === undefined ||
+    previous.goalType !== next.goalType ||
+    previous.targetWeightKg !== next.targetWeightKg ||
+    previous.weeklyRateKg !== next.weeklyRateKg
+  );
+}
+
+/**
+ * Photographie de l'objectif tel que l'utilisateur vient de le définir.
+ *
+ * `weeklyRateKg` est la valeur choisie, **avant** le plafonnement appliqué par
+ * `calculateCalorieTarget` : c'est elle qui révèle un rythme poussé au maximum.
+ * Aucun écran ne demande d'objectif calorique explicite : `requestedDailyKcal`
+ * reste donc absent.
+ */
+export function buildGoalChangeEvent(profile: UserProfile, at: Date): GoalChangeEvent {
+  return {
+    at: at.toISOString(),
+    sex: profile.sex,
+    currentWeightKg: profile.currentWeightKg,
+    heightCm: profile.heightCm,
+    ...(profile.targetWeightKg === undefined ? {} : { targetWeightKg: profile.targetWeightKg }),
+    ...(profile.weeklyRateKg === undefined ? {} : { requestedWeeklyRateKg: profile.weeklyRateKg }),
+  };
+}
+
 export type RiskSignal =
   | 'repeated_sub_floor_targets'
   | 'repeatedly_lowered_target_weight'

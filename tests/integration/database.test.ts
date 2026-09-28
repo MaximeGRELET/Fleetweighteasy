@@ -21,6 +21,7 @@ describe('migrations', () => {
         'consent',
         'food_item',
         'food_log_entry',
+        'goal_change_event',
         'meal',
         'profile',
         'sync_meta',
