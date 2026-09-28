@@ -37,11 +37,14 @@ export function TextField({
         {label}
       </Text>
       <View
+        testID={testID ? `${testID}-frame` : undefined}
         style={[
           styles.field,
           {
             borderRadius: theme.radius.md,
-            borderColor: error ? theme.colors.caution : theme.colors.border,
+            // `control` et non `border` : ce contour est la seule limite visible
+            // du champ, il doit se distinguer du fond (3:1).
+            borderColor: error ? theme.colors.caution : theme.colors.control,
             backgroundColor: theme.colors.surface,
           },
         ]}

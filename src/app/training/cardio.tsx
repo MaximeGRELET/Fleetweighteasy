@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Callout, StatusMessage, Text, TextField } from '@/components/ui';
+import { Button, Callout, Chip, StatusMessage, Text, TextField } from '@/components/ui';
 import { estimateCardioKcal } from '@/domain/nutrition/calories-sport';
 import {
   listMetEntriesForActivity,
@@ -77,9 +77,10 @@ export default function CardioScreen() {
             <Text variant="title">Enregistrer une séance</Text>
           </View>
 
-          <View style={styles.row} accessibilityRole="radiogroup">
+          <View style={styles.row} accessibilityRole="radiogroup" testID="cardio-activities">
             {ACTIVITIES.map(({ value, label }) => (
-              <Choice
+              <Chip
+                role="radio"
                 key={value}
                 label={label}
                 selected={activity === value}
@@ -96,16 +97,23 @@ export default function CardioScreen() {
             Intensité
           </Text>
 
-          {entries.map((entry: MetEntry) => (
-            <Choice
-              key={entry.id}
-              label={`${entry.label} · ${entry.paceHint}`}
-              selected={metEntryId === entry.id}
-              onPress={() => setMetEntryId(entry.id)}
-              testID={`cardio-intensity-${entry.id}`}
-              block
-            />
-          ))}
+          <View
+            style={styles.intensities}
+            accessibilityRole="radiogroup"
+            testID="cardio-intensities"
+          >
+            {entries.map((entry: MetEntry) => (
+              <Chip
+                role="radio"
+                key={entry.id}
+                label={`${entry.label} · ${entry.paceHint}`}
+                selected={metEntryId === entry.id}
+                onPress={() => setMetEntryId(entry.id)}
+                testID={`cardio-intensity-${entry.id}`}
+                block
+              />
+            ))}
+          </View>
 
           <TextField
             label="Durée"
@@ -150,46 +158,6 @@ export default function CardioScreen() {
   );
 }
 
-/** Choix exclusif, en rôle `radio`. */
-function Choice({
-  label,
-  selected,
-  onPress,
-  testID,
-  block,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-  testID: string;
-  block?: boolean;
-}) {
-  const theme = useTheme();
-
-  return (
-    <Text
-      accessibilityRole="radio"
-      accessibilityState={{ selected, checked: selected }}
-      accessibilityLabel={label}
-      testID={testID}
-      onPress={onPress}
-      variant="caption"
-      tone={selected ? 'primary' : 'text'}
-      style={[
-        styles.choice,
-        block ? styles.block : undefined,
-        {
-          borderRadius: theme.radius.pill,
-          borderColor: selected ? theme.colors.primary : theme.colors.border,
-          backgroundColor: selected ? theme.colors.primaryMuted : theme.colors.surface,
-        },
-      ]}
-    >
-      {label}
-    </Text>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center' },
   safeArea: { flex: 1, width: '100%' },
@@ -197,11 +165,5 @@ const styles = StyleSheet.create({
   heading: { gap: 4 },
   section: { marginTop: 8 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  choice: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  block: { width: '100%' },
+  intensities: { gap: 8 },
 });

@@ -1,5 +1,5 @@
 import { darkColors, lightColors, type Palette } from './colors';
-import { maxContentWidth, radius, spacing } from './spacing';
+import { maxContentWidth, minTouchTarget, radius, spacing } from './spacing';
 import { typography } from './typography';
 
 export type ColorScheme = 'light' | 'dark';
@@ -11,9 +11,10 @@ export type Theme = {
   radius: typeof radius;
   typography: typeof typography;
   maxContentWidth: number;
+  minTouchTarget: number;
 };
 
-const base = { spacing, radius, typography, maxContentWidth } as const;
+const base = { spacing, radius, typography, maxContentWidth, minTouchTarget } as const;
 
 export const lightTheme: Theme = { scheme: 'light', colors: lightColors, ...base };
 export const darkTheme: Theme = { scheme: 'dark', colors: darkColors, ...base };
@@ -23,5 +24,5 @@ export function getTheme(scheme: string | null | undefined): Theme {
   return scheme === 'dark' ? darkTheme : lightTheme;
 }
 
-export { darkColors, lightColors, maxContentWidth, radius, spacing, typography };
+export { darkColors, lightColors, maxContentWidth, minTouchTarget, radius, spacing, typography };
 export type { Palette };

@@ -20,7 +20,7 @@
 | 7     | Recettes                     | ✅ Terminée — validée sur appareil     |
 | 8     | Sport                        | ✅ Construite — à valider sur appareil |
 | 9     | Données locales & sauvegarde | ✅ Construite — à valider sur appareil |
-| 10    | Durcissement & mise en prod  | ⬜                                     |
+| 10    | Durcissement & mise en prod  | 🟡 En cours — accessibilité faite      |
 
 ---
 
@@ -307,6 +307,25 @@ affiché en attendant, sur l'accueil sport comme sur la séance.
   déjà présent.
 - 1 300 tests au vert, lint et typecheck propres.
 
+### Phase 10 — Durcissement & mise en prod (en cours)
+
+**Passe d'accessibilité** (#33, #34, #35), à valider sur appareil (#38) :
+
+- **Ce que lit le lecteur d'écran** (#33). L'étiquette d'un élément cliquable remplace le texte
+  de ses enfants. Plusieurs cartes n'y reprenaient qu'une partie de leur contenu, et le cas le plus
+  sérieux touchait la sécurité : **les allergènes d'une recette n'étaient jamais lus**. Ils le sont
+  désormais juste après le nom. Même correction pour les kcal et la fiabilité d'un aliment, la
+  description d'une `OptionCard`, la date de naissance choisie, l'unité et l'erreur d'un champ.
+- **Titres et annonces** (#34). `title` et `heading` portent le rôle `header`. Les confirmations et
+  les erreurs sont annoncées (`useAnnounce`, `StatusMessage`) : elles s'affichent loin du focus.
+- **Cibles et contrastes** (#35). Zone tactile de 48 dp minimum (`minTouchTarget`) pour les
+  pastilles et les liens texte (`LinkButton`). Les pastilles faites main du cardio et des recettes
+  sont remplacées par `Chip`, dans des `radiogroup`. Nouvelle couleur `control` (≥ 3:1) pour le
+  contour des champs et des cases à cocher : `border` plafonnait à 1,3:1.
+- **Contrastes verrouillés par un test** (`tests/unit/theme/contrast.test.ts`) : tout couple
+  texte/fond employé atteint 4,5:1, en clair comme en sombre, y compris les encarts `caution` en
+  sombre (6,5:1). C'était l'un des points de la validation Phase 8 (#3), désormais vérifié en CI.
+
 ---
 
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
@@ -470,7 +489,8 @@ Tickets fermés par cette décision : #18, #19, #20, #22, #23. #2 est remplacé 
 
 ## Prochaine étape : Phase 10 — Durcissement & mise en prod
 
-La Phase 9 est construite ; reste sa validation sur appareil (ci-dessus). La Phase 10 enchaîne :
-E2E sur les parcours critiques, passe d'accessibilité, écrans légaux (confidentialité : mentionner
-les sauvegardes iCloud/Google et le fichier d'export), préparation des stores. Les points
+La Phase 9 est construite ; reste sa validation sur appareil (ci-dessus). La passe d'accessibilité
+de la Phase 10 est faite (validation sur appareil : #38). Restent : E2E sur les parcours critiques,
+écrans légaux (confidentialité : mentionner les sauvegardes iCloud/Google et le fichier d'export),
+préparation des stores. Les points
 « bloquant-prod » hors code (#4, #10 à #13) restent à lever avant toute mise en service.

@@ -9,7 +9,14 @@ type Palette = {
   background: string;
   surface: string;
   surfaceMuted: string;
+  /** Séparateurs et contours décoratifs. Trop pâle pour délimiter un champ. */
   border: string;
+  /**
+   * Contour d'un composant qu'il faut repérer pour s'en servir (champ de saisie,
+   * case à cocher). Au moins 3:1 contre les trois fonds (WCAG 1.4.11), là où
+   * `border` plafonne à 1,3:1.
+   */
+  control: string;
   text: string;
   textMuted: string;
   textInverted: string;
@@ -31,6 +38,7 @@ export const lightColors: Palette = {
   surface: '#FFFFFF',
   surfaceMuted: '#F2F2F0',
   border: '#E2E2DE',
+  control: '#85857F',
   text: '#1A1A18',
   textMuted: '#6B6B66',
   textInverted: '#FFFFFF',
@@ -50,6 +58,7 @@ export const darkColors: Palette = {
   surface: '#1C1C1A',
   surfaceMuted: '#252523',
   border: '#33332F',
+  control: '#75756E',
   text: '#F2F2EF',
   textMuted: '#A0A099',
   textInverted: '#131311',

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/layout/screen';
-import { Button, Text, TextField } from '@/components/ui';
+import { Button, LinkButton, Text, TextField } from '@/components/ui';
 import type { FoodItem } from '@/domain/food/types';
 import { useFoodSearch } from '@/hooks/use-food-catalog';
 import { useMeals } from '@/hooks/use-food-library';
@@ -140,8 +140,9 @@ export default function NewMealScreen() {
                 />
               </View>
 
-              <Pressable
-                accessibilityRole="button"
+              <LinkButton
+                label="Retirer"
+                tone="textMuted"
                 accessibilityLabel={`Retirer ${component.item.name}`}
                 testID={`meal-new-remove-${component.item.id}`}
                 onPress={() =>
@@ -149,12 +150,7 @@ export default function NewMealScreen() {
                     current.filter((entry) => entry.item.id !== component.item.id),
                   )
                 }
-                hitSlop={12}
-              >
-                <Text variant="caption" tone="textMuted">
-                  Retirer
-                </Text>
-              </Pressable>
+              />
             </View>
           ))}
         </View>
