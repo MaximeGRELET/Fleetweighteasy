@@ -14,7 +14,7 @@ import {
  *
  * Conventions :
  * - Les identifiants sont des UUID texte, générés côté client : ils resteront
- *   valides quand la synchro serveur arrivera (Phase 9), sans renumérotation.
+ *   valides si une synchro entre appareils voit le jour, sans renumérotation.
  * - Les dates civiles sont stockées en `YYYY-MM-DD`, les horodatages en ISO 8601
  *   UTC. Texte plutôt qu'entier : lisible en debug et trié correctement par SQLite.
  * - Les booléens sont des entiers 0/1 (`mode: 'boolean'` côté Drizzle).
@@ -271,9 +271,10 @@ export const SYNC_ENTITY_TYPES = [
 ] as const;
 
 /**
- * Journal de synchronisation, posé dès la Phase 2 alors que la synchro serveur
- * n'arrive qu'en Phase 9 : ajouter ces colonnes plus tard imposerait une
- * migration de toutes les tables et une reconstruction de l'état « sale ».
+ * Journal de synchronisation, posé dès la Phase 2. L'app reste locale (Phase 9),
+ * mais le tenir à jour garde une synchro possible sans refonte : l'ajouter plus
+ * tard imposerait une migration de toutes les tables et une reconstruction de
+ * l'état « sale ».
  *
  * - `dirty` : modifié localement, pas encore poussé.
  * - `updatedAt` : dernière écriture locale.

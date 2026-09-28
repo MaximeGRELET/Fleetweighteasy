@@ -54,8 +54,9 @@ Deux règles sont vérifiées automatiquement par ESLint plutôt que par relectu
 
 ## Persistance
 
-Local-first : toute donnée utilisateur vit d'abord en SQLite sur l'appareil, via Drizzle. La
-synchro serveur (Phase 9) viendra par-dessus, sans remettre cette couche en cause.
+Tout reste en local : les données de l'utilisateur vivent en SQLite sur l'appareil, via Drizzle,
+et nulle part ailleurs. Pas de serveur ni de compte ; la sauvegarde passe par un export de fichier
+(voir AVANCEMENT.md, « Décisions — Phase 9 »).
 
 - Le schéma est dans [src/data/db/schema.ts](src/data/db/schema.ts) ; après l'avoir modifié,
   lancer `npm run db:generate` et **commiter les fichiers générés** — les tests d'intégration

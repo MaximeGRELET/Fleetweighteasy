@@ -6,9 +6,10 @@ import type { AppDatabase } from './types';
 /**
  * Journal de synchronisation.
  *
- * Posé dès la Phase 2 alors que la synchro serveur n'arrive qu'en Phase 9 :
- * reconstruire après coup l'état « modifié localement » d'une base déjà remplie
- * est bien plus coûteux que de le tenir à jour depuis le début.
+ * Posé dès la Phase 2. L'app reste locale (Phase 9), et le moteur de
+ * `src/data/sync/` n'est branché nulle part ; mais reconstruire après coup
+ * l'état « modifié localement » d'une base déjà remplie serait bien plus
+ * coûteux que de le tenir à jour depuis le début.
  *
  * Toute écriture d'un repository passe par `markDirty` ou `markDeleted`, dans
  * la **même transaction** que l'écriture métier — sinon un crash entre les deux
@@ -47,8 +48,8 @@ export function markDirty(
  * Marque une entité comme supprimée localement.
  *
  * La ligne est **conservée** : sans cette pierre tombale, la suppression ne
- * pourrait jamais être propagée au serveur (Phase 9). Elle sera purgée une fois
- * la suppression confirmée par le serveur.
+ * pourrait jamais être propagée si une synchro voit le jour. Elle serait
+ * purgée une fois la suppression confirmée par le serveur.
  */
 export function markDeleted(
   db: AppDatabase,
@@ -93,7 +94,7 @@ export function getSyncMeta(
   return row ? toRecord(row) : undefined;
 }
 
-/** Accuse réception d'une synchronisation réussie (utilisé en Phase 9). */
+/** Accuse réception d'une synchronisation réussie. */
 export function markSynced(
   db: AppDatabase,
   entityType: SyncEntityType,
