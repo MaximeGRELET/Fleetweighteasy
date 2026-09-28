@@ -104,6 +104,7 @@ export default function MealsScreen() {
                 {MEAL_TYPES.map((type) => (
                   <Chip
                     key={type}
+                    role="button"
                     label={MEAL_TYPE_LABELS[type]}
                     selected={false}
                     onPress={() => replay(meal, type)}
