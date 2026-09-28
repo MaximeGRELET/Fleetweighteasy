@@ -1,7 +1,7 @@
 # État d'avancement — Application d'accompagnement à la perte de poids
 
 > Document de suivi. Mis à jour au fil des phases.
-> **Dernière mise à jour :** fin Phase 8 (sport), version `v0.1.0`. Phase 7 validée sur appareil.
+> **Dernière mise à jour :** Phase 9 construite (données locales & sauvegarde), en attente de validation sur appareil. Phase 7 validée sur appareil.
 > **Mode de travail à partir de la v0.1.0 :** une branche et un ticket GitHub par évolution, fusion dans `main` par pull request.
 
 ---
@@ -376,8 +376,10 @@ Le partage et le sélecteur de fichiers sont des API de plateforme, simulées da
 - **Aucun niveau d'entraînement déclaré à l'onboarding.** La sélection de programme s'en passe par
   prudence (plafond intermédiaire), mais une question à l'onboarding rendrait la recommandation
   juste plutôt que prudente.
-- **Le dossier `src/app/(tabs)/` est un échafaudage vide** de la Phase 0 (cinq dossiers, cinq
-  `.gitkeep`). L'app utilise des routes à plat. À supprimer ou à utiliser en Phase 10.
+- ✅ **Le dossier `src/app/(tabs)/` était un échafaudage vide** de la Phase 0 — supprimé (#7).
+  L'app utilise des routes à plat, que les tests de navigation vérifient avec le vrai routeur. Des
+  onglets restent possibles plus tard : attention alors aux URL, un groupe entre parenthèses
+  n'ajoutant rien au chemin (voir #30).
 
 ---
 
@@ -392,7 +394,7 @@ Le partage et le sélecteur de fichiers sont des API de plateforme, simulées da
   maintenant de la table d'ingrédients, et un test garantit que chaque suggestion peut réellement
   exclure quelque chose. Une saisie libre reste conservée au profil même si aucune recette ne la
   contient — c'est la préférence de la personne, pas un critère.
-- **Images de recettes** : décision produit en attente (voir « Actions qui te reviennent », point 6).
+- **Images de recettes** : décision produit en attente (voir « Actions qui te reviennent », point 7).
   Le champ `imageUrl` est prévu dans le modèle mais délibérément non branché.
 
 ---
