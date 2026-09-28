@@ -46,7 +46,8 @@
           "cameraPermission": "L’accès à la caméra sert uniquement à scanner les codes-barres des produits alimentaires. Aucune photo n’est enregistrée ni envoyée.",
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

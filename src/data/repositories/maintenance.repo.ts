@@ -1,3 +1,4 @@
+import { type Backup, createBackup, restoreBackup } from '@/data/backup';
 import { resetAllLocalData } from '@/data/reset';
 
 import type { RepositoryContext } from './context';
@@ -22,14 +23,29 @@ export interface MaintenanceRepository {
    * faux et l'aiguillage racine renvoie vers l'onboarding.
    */
   resetAllLocalData(): void;
+  /** Photographie de toutes les données de l'utilisateur, pour la sauvegarde par fichier. */
+  createBackup(): Backup;
+  /**
+   * Remplace toutes les données locales par celles d'une sauvegarde déjà
+   * vérifiée (`parseBackup`). Tout ou rien.
+   */
+  restoreBackup(backup: Backup): void;
 }
 
 export function createMaintenanceRepository(context: RepositoryContext): MaintenanceRepository {
-  const { db } = context;
+  const { db, now } = context;
 
   return {
     resetAllLocalData() {
       resetAllLocalData(db);
+    },
+
+    createBackup() {
+      return createBackup(db, now());
+    },
+
+    restoreBackup(backup) {
+      restoreBackup(db, backup, now());
     },
   };
 }
