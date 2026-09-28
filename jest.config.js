@@ -7,6 +7,11 @@ module.exports = {
   },
   testMatch: ['<rootDir>/tests/**/*.test.ts', '<rootDir>/tests/**/*.test.tsx'],
   testPathIgnorePatterns: ['<rootDir>/tests/e2e/'],
+  // Le premier test d'un fichier d'écran paie la compilation à froid de l'écran
+  // et de ses dépendances. Sur la CI, cela dépasse parfois les 5 s par défaut
+  // (#25). 20 s absorbent ce démarrage sans laisser un vrai blocage passer
+  // inaperçu.
+  testTimeout: 20_000,
   collectCoverageFrom: [
     'src/domain/**/*.ts',
     'src/data/**/*.ts',
