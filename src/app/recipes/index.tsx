@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecipeCard } from '@/components/recipes/recipe-card';
-import { Button, Callout, Text } from '@/components/ui';
+import { Button, Callout, Chip, Text } from '@/components/ui';
 import type { MealType } from '@/domain/journal/types';
 import { MEAL_TYPES } from '@/domain/journal/types';
 import { useRecipes } from '@/hooks/use-recipes';
@@ -58,15 +58,17 @@ export default function RecipesScreen() {
             />
           ) : null}
 
-          <View style={styles.filters}>
-            <MealFilter
+          <View style={styles.filters} accessibilityRole="radiogroup" testID="recipes-filters">
+            <Chip
+              role="radio"
               label="Tout"
               selected={mealType === undefined}
               onPress={() => setMealType(undefined)}
               testID="recipes-filter-all"
             />
             {MEAL_TYPES.map((candidate) => (
-              <MealFilter
+              <Chip
+                role="radio"
                 key={candidate}
                 label={MEAL_LABELS[candidate]}
                 selected={mealType === candidate}
@@ -110,54 +112,11 @@ export default function RecipesScreen() {
   );
 }
 
-/** Choix exclusif du moment de la journée, en rôle `radio`. */
-function MealFilter({
-  label,
-  selected,
-  onPress,
-  testID,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-  testID: string;
-}) {
-  const theme = useTheme();
-
-  return (
-    <Text
-      accessibilityRole="radio"
-      accessibilityState={{ selected, checked: selected }}
-      accessibilityLabel={label}
-      testID={testID}
-      onPress={onPress}
-      variant="caption"
-      tone={selected ? 'primary' : 'text'}
-      style={[
-        styles.filter,
-        {
-          borderRadius: theme.radius.pill,
-          borderColor: selected ? theme.colors.primary : theme.colors.border,
-          backgroundColor: selected ? theme.colors.primaryMuted : theme.colors.surface,
-        },
-      ]}
-    >
-      {label}
-    </Text>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center' },
   safeArea: { flex: 1, width: '100%' },
   content: { padding: 24, gap: 12, alignSelf: 'center', width: '100%' },
   heading: { gap: 4 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  filter: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
   note: { textAlign: 'center' },
 });

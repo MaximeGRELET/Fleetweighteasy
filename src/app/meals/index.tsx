@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/layout/screen';
 import { MEAL_TYPE_LABELS } from '@/components/journal/meal-section';
-import { Button, Callout, Chip, Text } from '@/components/ui';
+import { Button, Callout, Chip, LinkButton, Text } from '@/components/ui';
 import type { FoodItem, Meal } from '@/domain/food/types';
 import { snapshotForMeal } from '@/domain/journal/snapshot';
 import { MEAL_TYPES, type MealType } from '@/domain/journal/types';
@@ -113,16 +113,11 @@ export default function MealsScreen() {
                 ))}
               </View>
             ) : (
-              <Pressable
-                accessibilityRole="button"
+              <LinkButton
+                label="+ Ajouter au journal"
                 testID={`meal-${meal.id}-replay`}
                 onPress={() => setPendingMeal(meal)}
-                hitSlop={8}
-              >
-                <Text variant="caption" tone="primary">
-                  + Ajouter au journal
-                </Text>
-              </Pressable>
+              />
             )}
           </View>
         );

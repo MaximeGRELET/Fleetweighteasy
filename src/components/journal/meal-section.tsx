@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@/components/ui';
+import { LinkButton, Text } from '@/components/ui';
 import type { FoodLogEntry, MealType } from '@/domain/journal/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatKcal } from '@/lib/format';
@@ -82,31 +82,22 @@ export function MealSection({
             </Text>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
+          <LinkButton
+            label="Retirer"
+            tone="textMuted"
             accessibilityLabel={`Supprimer ${entry.snapshot.name}`}
             testID={`entry-remove-${entry.id}`}
             onPress={() => onRemoveEntry(entry.id)}
-            hitSlop={12}
-          >
-            <Text variant="caption" tone="textMuted">
-              Retirer
-            </Text>
-          </Pressable>
+          />
         </View>
       ))}
 
-      <Pressable
-        accessibilityRole="button"
+      <LinkButton
+        label="+ Ajouter"
         accessibilityLabel={`Ajouter au ${MEAL_TYPE_LABELS[mealType].toLowerCase()}`}
         testID={`meal-${mealType}-add`}
         onPress={() => onAdd(mealType)}
-        hitSlop={8}
-      >
-        <Text variant="caption" tone="primary">
-          + Ajouter
-        </Text>
-      </Pressable>
+      />
     </View>
   );
 }

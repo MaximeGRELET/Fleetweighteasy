@@ -2,6 +2,7 @@ export { Button, type ButtonProps } from './button';
 export { Callout, type CalloutProps } from './callout';
 export { Checkbox, type CheckboxProps } from './checkbox';
 export { Chip, type ChipProps } from './chip';
+export { LinkButton, type LinkButtonProps } from './link-button';
 export { OptionCard, type OptionCardProps } from './option-card';
 export { ProgressBar, type ProgressBarProps } from './progress-bar';
 export { ProgressDots, type ProgressDotsProps } from './progress-dots';

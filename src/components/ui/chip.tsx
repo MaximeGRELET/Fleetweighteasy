@@ -18,11 +18,20 @@ export interface ChipProps {
   onPress: () => void;
   /** `checkbox` par défaut. */
   role?: ChipRole;
+  /** Occupe toute la largeur : pour un libellé long, dans une liste verticale. */
+  block?: boolean;
   testID?: string;
 }
 
 /** Puce compacte : sélection multiple, choix exclusif ou action, selon `role`. */
-export function Chip({ label, selected, onPress, role = 'checkbox', testID }: ChipProps) {
+export function Chip({
+  label,
+  selected,
+  onPress,
+  role = 'checkbox',
+  block = false,
+  testID,
+}: ChipProps) {
   const theme = useTheme();
 
   return (
@@ -34,7 +43,12 @@ export function Chip({ label, selected, onPress, role = 'checkbox', testID }: Ch
       onPress={onPress}
       style={[
         styles.chip,
+        block ? styles.block : undefined,
         {
+          // Hauteur portée par la pastille elle-même plutôt que par un
+          // `hitSlop` : une zone élargie invisible chevaucherait la pastille
+          // voisine, séparée de 8 px seulement, et le doigt tomberait à côté.
+          minHeight: theme.minTouchTarget,
           borderRadius: theme.radius.pill,
           borderColor: selected ? theme.colors.primary : theme.colors.border,
           backgroundColor: selected ? theme.colors.primaryMuted : theme.colors.surface,
@@ -65,6 +79,8 @@ const styles = StyleSheet.create({
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
+    justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
   },
+  block: { width: '100%' },
 });

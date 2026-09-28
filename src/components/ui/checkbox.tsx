@@ -22,14 +22,14 @@ export function Checkbox({ label, checked, onToggle, testID }: CheckboxProps) {
       accessibilityLabel={label}
       testID={testID}
       onPress={onToggle}
-      style={styles.row}
+      style={[styles.row, { minHeight: theme.minTouchTarget }]}
     >
       <View
         style={[
           styles.box,
           {
             borderRadius: theme.radius.sm,
-            borderColor: checked ? theme.colors.primary : theme.colors.border,
+            borderColor: checked ? theme.colors.primary : theme.colors.control,
             backgroundColor: checked ? theme.colors.primary : 'transparent',
           },
         ]}

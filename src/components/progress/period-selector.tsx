@@ -43,6 +43,7 @@ export function PeriodSelector({ value, onChange, testID }: PeriodSelectorProps)
             style={[
               styles.item,
               {
+                minHeight: theme.minTouchTarget,
                 borderRadius: theme.radius.pill,
                 borderColor: selected ? theme.colors.primary : theme.colors.border,
                 backgroundColor: selected ? theme.colors.primaryMuted : theme.colors.surface,
@@ -61,5 +62,10 @@ export function PeriodSelector({ value, onChange, testID }: PeriodSelectorProps)
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
-  item: { paddingVertical: 8, paddingHorizontal: 14, borderWidth: StyleSheet.hairlineWidth },
+  item: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
 });

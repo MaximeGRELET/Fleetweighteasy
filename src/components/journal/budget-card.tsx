@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { ProgressBar, Text } from '@/components/ui';
+import { LinkButton, ProgressBar, Text } from '@/components/ui';
 import type { DailyBudget } from '@/domain/journal/daily-budget';
 import { useTheme } from '@/hooks/use-theme';
 import { formatGrams, formatKcal } from '@/lib/format';
@@ -70,18 +70,15 @@ export function BudgetCard({ budget, testID }: BudgetCardProps) {
         {CALORIE_MODE_EXPLANATIONS[view.explanation].body}
       </Text>
 
-      <Pressable
-        accessibilityRole="button"
+      <LinkButton
+        label={
+          showAlternative
+            ? '← Revenir à ton mode'
+            : `Voir ce que donnerait le mode ${budget.alternative.mode === 'credited' ? 'avec crédit sportif' : 'sans crédit sportif'}`
+        }
         testID="budget-toggle-view"
         onPress={() => setShowAlternative((current) => !current)}
-        hitSlop={8}
-      >
-        <Text variant="caption" tone="primary">
-          {showAlternative
-            ? '← Revenir à ton mode'
-            : `Voir ce que donnerait le mode ${budget.alternative.mode === 'credited' ? 'avec crédit sportif' : 'sans crédit sportif'}`}
-        </Text>
-      </Pressable>
+      />
 
       {showAlternative ? (
         <Text variant="caption" tone="textMuted" testID="budget-alternative-note">

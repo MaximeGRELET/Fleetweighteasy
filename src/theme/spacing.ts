@@ -27,3 +27,10 @@ export const maxContentWidth = 560;
 
 export type SpacingToken = keyof typeof spacing;
 export type RadiusToken = keyof typeof radius;
+
+/**
+ * Côté minimal d'une zone tactile : 48 dp, la recommandation Android (Apple
+ * demande 44 pt). En dessous, un doigt mal assuré ou un tremblement fait rater
+ * la cible — ou toucher sa voisine.
+ */
+export const minTouchTarget = 48;

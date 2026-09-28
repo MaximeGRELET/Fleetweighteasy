@@ -1,18 +1,29 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { useState } from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import BiometricsScreen from '@/app/(onboarding)/biometrics';
 import RecipeDetailScreen from '@/app/recipes/[id]';
+import RecipesScreen from '@/app/recipes/index';
+import CardioScreen from '@/app/training/cardio';
 import { FoodRow } from '@/components/food/food-row';
 import { RecipeCard } from '@/components/recipes/recipe-card';
 import { SourceNotice } from '@/components/food/source-notice';
-import { Button, OptionCard, StatusMessage, Text, TextField } from '@/components/ui';
+import {
+  Button,
+  Chip,
+  LinkButton,
+  OptionCard,
+  StatusMessage,
+  Text,
+  TextField,
+} from '@/components/ui';
 import { ALLERGEN_LABELS } from '@/domain/recipes/allergens';
 import { RECIPES } from '@/domain/recipes/content/recipes';
 import { resolveRecipe } from '@/domain/recipes/nutrition';
 import { formatIsoDate, formatKcal } from '@/lib/format';
 import { PRIVACY_POLICY_VERSION } from '@/lib/legal';
+import { lightColors, minTouchTarget } from '@/theme';
 
 import { buildFoodItem, buildStoredProfile } from '../integration/helpers/fixtures';
 import { createAppHarness, type AppHarness } from '../support/render-with-app';
@@ -324,5 +335,70 @@ describe('annonces', () => {
     } finally {
       harness.cleanup();
     }
+  });
+});
+
+describe('cibles tactiles et contours', () => {
+  const flat = (element: { props: { style?: unknown } }) =>
+    StyleSheet.flatten(element.props.style as StyleProp<ViewStyle>) ?? {};
+
+  it('donne à une pastille la hauteur tactile minimale', async () => {
+    const screen = await render(
+      <Chip label="Arachide" selected={false} onPress={() => undefined} testID="chip" />,
+    );
+
+    expect(flat(screen.getByTestId('chip')).minHeight).toBe(minTouchTarget);
+  });
+
+  it('donne à un lien texte la zone tactile minimale, dans les deux dimensions', async () => {
+    const screen = await render(
+      <LinkButton label="Retirer" onPress={() => undefined} testID="link" />,
+    );
+    const style = flat(screen.getByTestId('link'));
+
+    expect(style.minHeight).toBe(minTouchTarget);
+    expect(style.minWidth).toBe(minTouchTarget);
+  });
+
+  it('délimite un champ de saisie par le contour contrasté', async () => {
+    const screen = await render(
+      <TextField label="Poids" value="" onChangeText={() => undefined} testID="field" />,
+    );
+    expect(flat(screen.getByTestId('field-frame')).borderColor).toBe(lightColors.control);
+  });
+});
+
+describe('groupes de choix exclusifs', () => {
+  let harness: AppHarness;
+
+  beforeEach(() => {
+    harness = createAppHarness();
+    harness.repositories.profile.save(buildStoredProfile());
+  });
+
+  afterEach(() => {
+    harness.cleanup();
+  });
+
+  it('regroupe les filtres de repas des recettes', async () => {
+    const screen = await harness.renderScreen(<RecipesScreen />);
+    const group = screen.getByTestId('recipes-filters');
+
+    expect(group.props.accessibilityRole).toBe('radiogroup');
+
+    expect(within(group).getAllByRole('radio')).toHaveLength(5);
+  });
+
+  it('regroupe les activités et les intensités du cardio, séparément', async () => {
+    const screen = await harness.renderScreen(<CardioScreen />);
+    const activities = screen.getByTestId('cardio-activities');
+    const intensities = screen.getByTestId('cardio-intensities');
+
+    expect(activities.props.accessibilityRole).toBe('radiogroup');
+    expect(intensities.props.accessibilityRole).toBe('radiogroup');
+
+    expect(within(activities).getByTestId('cardio-activity-walking')).toBeTruthy();
+    expect(within(intensities).getAllByRole('radio').length).toBeGreaterThan(0);
+    expect(within(intensities).queryByTestId('cardio-activity-walking')).toBeNull();
   });
 });

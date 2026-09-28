@@ -106,7 +106,7 @@ export default function BiometricsScreen() {
           onPress={() => setPickerVisible(true)}
           style={[
             styles.dateField,
-            { borderColor: theme.colors.border, borderRadius: theme.radius.md },
+            { borderColor: theme.colors.control, borderRadius: theme.radius.md },
           ]}
         >
           <Text variant="body" tone={draft.birthDate ? 'text' : 'textMuted'}>
