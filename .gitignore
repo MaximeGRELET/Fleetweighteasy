@@ -49,3 +49,8 @@ example
 
 # tests
 coverage/
+
+# Binaires locaux (Expo Go, builds) — trop lourds pour le dépôt
+*.apk
+*.aab
+*.ipa

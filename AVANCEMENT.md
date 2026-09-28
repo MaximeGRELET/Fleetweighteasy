@@ -1,25 +1,26 @@
 # État d'avancement — Application d'accompagnement à la perte de poids
 
 > Document de suivi. Mis à jour au fil des phases.
-> **Dernière mise à jour :** fin Phase 8 (sport). Phase 7 validée sur appareil.
+> **Dernière mise à jour :** fin Phase 8 (sport), version `v0.1.0`. Phase 7 validée sur appareil.
+> **Mode de travail à partir de la v0.1.0 :** une branche et un ticket GitHub par évolution, fusion dans `main` par pull request.
 
 ---
 
 ## Vue d'ensemble
 
-| Phase | Intitulé                     | État                                           |
-| ----- | ---------------------------- | ---------------------------------------------- |
-| 0     | Fondations projet            | ✅ Terminée & commitée                         |
-| 1     | Domaine nutritionnel         | ✅ Terminée & commitée                         |
-| 2     | Data & persistance locale    | ✅ Terminée & commitée                         |
-| 3     | Onboarding                   | ✅ Terminée & commitée                         |
-| 4     | Journal + Open Food Facts    | ✅ Terminée & commitée                         |
-| 5     | Suivi du poids & progression | ⏭️ Prochaine                                   |
-| 6     | Moteur de conseils           | ⬜ Contenu prêt (25 briques rédigées)          |
-| 7     | Recettes                     | ✅ Construite — à valider sur appareil         |
-| 8     | Sport                        | ⬜ Données prêtes (METs + noyau exercices)     |
-| 9     | Backend & synchronisation    | ⬜ Groundwork posé — voir dépendances d'entrée |
-| 10    | Durcissement & mise en prod  | ⬜                                             |
+| Phase | Intitulé                     | État                                     |
+| ----- | ---------------------------- | ---------------------------------------- |
+| 0     | Fondations projet            | ✅ Terminée & commitée                   |
+| 1     | Domaine nutritionnel         | ✅ Terminée & commitée                   |
+| 2     | Data & persistance locale    | ✅ Terminée & commitée                   |
+| 3     | Onboarding                   | ✅ Terminée & commitée                   |
+| 4     | Journal + Open Food Facts    | ✅ Terminée & commitée                   |
+| 5     | Suivi du poids & progression | ✅ Terminée & commitée                   |
+| 6     | Moteur de conseils           | ✅ Terminée & commitée                   |
+| 7     | Recettes                     | ✅ Terminée — validée sur appareil       |
+| 8     | Sport                        | ✅ Construite — à valider sur appareil   |
+| 9     | Backend & synchronisation    | ⏭️ Prochaine — voir dépendances d'entrée |
+| 10    | Durcissement & mise en prod  | ⬜                                       |
 
 ---
 
