@@ -92,6 +92,7 @@ describe('resetAllLocalData', () => {
       consent: 0,
       food_item: 0,
       food_log_entry: 0,
+      goal_change_event: 0,
       meal: 0,
       profile: 0,
       sync_meta: 0,

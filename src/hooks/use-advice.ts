@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { buildAdviceContext, type DailyIntake } from '@/domain/advice/context';
 import { selectAdvice } from '@/domain/advice/engine';
 import type { AdviceSelection } from '@/domain/advice/types';
+import { detectRiskSignals } from '@/domain/nutrition/safety';
 import { addDays } from '@/domain/progress/calendar';
 import { todayIsoDate } from '@/stores/session';
 
@@ -64,10 +65,9 @@ export function useAdvice(): AdviceSelection | undefined {
       context,
       safety: {
         target: plan.target,
-        // Les signaux de risque attendent un historique des objectifs successifs
-        // qu'aucune table ne conserve encore (PHASE_1 §5.5). La bande est prête
-        // à les recevoir ; il n'y a simplement rien à lui donner aujourd'hui.
-        riskSignals: [],
+        // L'historique est relu à chaque calcul : `profile` change d'identité à
+        // chaque écriture, et c'est `profile.save` qui ajoute les événements.
+        riskSignals: detectRiskSignals(repositories.profile.getGoalHistory()),
       },
     });
   }, [

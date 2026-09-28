@@ -232,10 +232,36 @@ export const workoutLogEntry = sqliteTable(
   (table) => [index('workout_log_entry_date_idx').on(table.date)],
 );
 
+/**
+ * Historique des objectifs successifs, en **ajout seul** : une ligne n'est
+ * jamais modifiée après écriture.
+ *
+ * `profile` ne garde que l'objectif courant ; c'est ici que survit ce qu'il
+ * écrase, pour que `detectRiskSignals` puisse repérer des révisions répétées
+ * (PHASE_1 §5.5). Les colonnes reprennent `GoalChangeEvent` à l'identique.
+ * Données de santé : effacées avec le profil (`profile.clear()`).
+ */
+export const goalChangeEvent = sqliteTable(
+  'goal_change_event',
+  {
+    id: text('id').primaryKey(),
+    at: text('at').notNull(),
+    sex: text('sex', { enum: ['male', 'female'] }).notNull(),
+    currentWeightKg: real('current_weight_kg').notNull(),
+    heightCm: real('height_cm').notNull(),
+    targetWeightKg: real('target_weight_kg'),
+    /** Rythme choisi, avant plafonnement : le seul endroit où il survit. */
+    requestedWeeklyRateKg: real('requested_weekly_rate_kg'),
+    requestedDailyKcal: real('requested_daily_kcal'),
+  },
+  (table) => [index('goal_change_event_at_idx').on(table.at)],
+);
+
 // --- Métadonnées de synchronisation ---------------------------------------
 
 export const SYNC_ENTITY_TYPES = [
   'profile',
+  'goal_change_event',
   'consent',
   'food_item',
   'meal',

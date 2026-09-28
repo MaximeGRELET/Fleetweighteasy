@@ -3,6 +3,7 @@ import { calculateCalorieTarget } from '@/domain/nutrition/energy';
 import {
   assertUsableWeeklyRate,
   BMI_UNDERWEIGHT_THRESHOLD,
+  buildGoalChangeEvent,
   checkTargetWeightSafety,
   DEFAULT_WEEKLY_RATE_FRACTION,
   detectRiskSignals,
@@ -10,6 +11,7 @@ import {
   getMaxWeeklyRateKg,
   getMinimumDailyKcal,
   type GoalChangeEvent,
+  hasGoalChanged,
   KCAL_PER_KG_FAT,
   MAX_DAILY_DEFICIT_KCAL,
   MAX_WEEKLY_RATE_FRACTION,
@@ -341,6 +343,68 @@ describe('detectRiskSignals', () => {
         'persistent_maximum_rate',
       ]),
     );
+  });
+});
+
+describe('hasGoalChanged', () => {
+  const previous = buildProfile({ goalType: 'weight_loss', targetWeightKg: 60, weeklyRateKg: 0.5 });
+
+  it('considère le premier enregistrement comme un objectif défini', () => {
+    expect(hasGoalChanged(undefined, previous)).toBe(true);
+  });
+
+  it.each([
+    ['le type d’objectif', { goalType: 'maintenance' as GoalType }],
+    ['le poids cible', { targetWeightKg: 58 }],
+    ['le retrait du poids cible', { targetWeightKg: undefined }],
+    ['le rythme', { weeklyRateKg: 0.6 }],
+  ])('détecte un changement portant sur %s', (_label, patch) => {
+    expect(hasGoalChanged(previous, { ...previous, ...patch })).toBe(true);
+  });
+
+  /**
+   * Le recalcul adaptatif réécrit le poids courant à chaque demi-kilo perdu :
+   * l'historiser noierait les vraies révisions dans des événements subis.
+   */
+  it('ignore une réécriture qui ne touche pas à l’objectif', () => {
+    expect(
+      hasGoalChanged(previous, { ...previous, currentWeightKg: 70, lastNotifiedWeightKg: 72 }),
+    ).toBe(false);
+  });
+});
+
+describe('buildGoalChangeEvent', () => {
+  const at = new Date('2026-04-01T09:30:00.000Z');
+
+  it('photographie l’objectif et la biométrie du moment', () => {
+    const profile = buildProfile({ targetWeightKg: 60, weeklyRateKg: 0.5 });
+
+    expect(buildGoalChangeEvent(profile, at)).toEqual({
+      at: '2026-04-01T09:30:00.000Z',
+      sex: profile.sex,
+      currentWeightKg: profile.currentWeightKg,
+      heightCm: profile.heightCm,
+      targetWeightKg: 60,
+      requestedWeeklyRateKg: 0.5,
+    });
+  });
+
+  it('garde le rythme demandé, même au-delà du plafond appliqué au calcul', () => {
+    const profile = buildProfile({ currentWeightKg: 60, weeklyRateKg: 2 });
+
+    expect(buildGoalChangeEvent(profile, at).requestedWeeklyRateKg).toBe(2);
+    expect(getMaxWeeklyRateKg(60)).toBeLessThan(2);
+  });
+
+  it('omet les champs absents du profil', () => {
+    const event = buildGoalChangeEvent(
+      buildProfile({ targetWeightKg: undefined, weeklyRateKg: undefined }),
+      at,
+    );
+
+    expect('targetWeightKg' in event).toBe(false);
+    expect('requestedWeeklyRateKg' in event).toBe(false);
+    expect('requestedDailyKcal' in event).toBe(false);
   });
 });
 

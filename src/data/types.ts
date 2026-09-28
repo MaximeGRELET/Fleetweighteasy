@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import type { FoodItem, Meal, MealItem, ServingSize } from '@/domain/food/types';
 import type { FoodLogEntry } from '@/domain/journal/types';
+import type { GoalChangeEvent } from '@/domain/nutrition/safety';
 import type { WeightEntry } from '@/domain/progress/types';
 import type { SportProfile, UserProfile } from '@/domain/profile/types';
 import type { WorkoutLogEntry, WorkoutPayload } from '@/domain/training/types';
@@ -10,6 +11,7 @@ import {
   consent,
   foodItem,
   foodLogEntry,
+  goalChangeEvent,
   meal,
   profile,
   weightEntry,
@@ -28,6 +30,8 @@ import { DataIntegrityError } from './errors';
 
 export type ProfileRow = typeof profile.$inferSelect;
 export type ProfileInsert = typeof profile.$inferInsert;
+export type GoalChangeEventRow = typeof goalChangeEvent.$inferSelect;
+export type GoalChangeEventInsert = typeof goalChangeEvent.$inferInsert;
 export type ConsentRow = typeof consent.$inferSelect;
 export type ConsentInsert = typeof consent.$inferInsert;
 export type FoodItemRow = typeof foodItem.$inferSelect;
@@ -167,6 +171,35 @@ export function toProfileInsert(
     lastNotifiedWeightKg: userProfile.lastNotifiedWeightKg ?? null,
     createdAt: metadata.createdAt,
     updatedAt: metadata.updatedAt,
+  };
+}
+
+// --- Historique des objectifs ---------------------------------------------
+
+export function toGoalChangeEvent(row: GoalChangeEventRow): GoalChangeEvent {
+  return {
+    at: row.at,
+    sex: row.sex,
+    currentWeightKg: row.currentWeightKg,
+    heightCm: row.heightCm,
+    ...(row.targetWeightKg === null ? {} : { targetWeightKg: row.targetWeightKg }),
+    ...(row.requestedWeeklyRateKg === null
+      ? {}
+      : { requestedWeeklyRateKg: row.requestedWeeklyRateKg }),
+    ...(row.requestedDailyKcal === null ? {} : { requestedDailyKcal: row.requestedDailyKcal }),
+  };
+}
+
+export function toGoalChangeEventInsert(id: string, event: GoalChangeEvent): GoalChangeEventInsert {
+  return {
+    id,
+    at: event.at,
+    sex: event.sex,
+    currentWeightKg: event.currentWeightKg,
+    heightCm: event.heightCm,
+    targetWeightKg: event.targetWeightKg ?? null,
+    requestedWeeklyRateKg: event.requestedWeeklyRateKg ?? null,
+    requestedDailyKcal: event.requestedDailyKcal ?? null,
   };
 }
 
