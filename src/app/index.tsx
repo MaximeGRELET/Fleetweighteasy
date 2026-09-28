@@ -28,7 +28,10 @@ export default function RootScreen() {
   const completed = useHasCompletedOnboarding();
 
   if (!completed) {
-    return <Redirect href="/(onboarding)" />;
+    // Adresse explicite, et unique : un `(onboarding)/index` partagerait l'URL
+    // `/` avec cet écran, et `router.replace('/')` en fin d'onboarding
+    // renverrait alors vers l'accueil du questionnaire au lieu d'ici (#30).
+    return <Redirect href="/(onboarding)/welcome" />;
   }
 
   return <TodayScreen />;

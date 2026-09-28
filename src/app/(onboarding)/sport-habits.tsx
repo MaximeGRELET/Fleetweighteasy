@@ -64,11 +64,11 @@ export default function TrainingScreen() {
       testID="onboarding-training"
       title="Comment t’entraînes-tu ?"
       subtitle="Pour te proposer plus tard des séances réalisables avec ce que tu as sous la main."
-      progress={stepProgress('training', draft.goalType)}
+      progress={stepProgress('sport-habits', draft.goalType)}
       primaryLabel="Continuer"
       primaryDisabled={!validation.success}
       onPrimary={() => {
-        const next = nextStep('training', draft.goalType);
+        const next = nextStep('sport-habits', draft.goalType);
         if (next) {
           router.push(onboardingRoute(next));
         }

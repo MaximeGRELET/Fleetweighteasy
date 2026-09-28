@@ -13,7 +13,7 @@ describe('stepsForGoal', () => {
       'biometrics',
       'target-weight',
       'activity',
-      'training',
+      'sport-habits',
       'diet',
       'rate',
       'summary',

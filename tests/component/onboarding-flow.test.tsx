@@ -152,7 +152,7 @@ describe('aiguillage racine', () => {
   it('envoie vers l’onboarding quand aucun profil n’existe', async () => {
     const screen = await harness.renderScreen(<RootScreen />);
 
-    expect(screen.getByTestId('redirect').props.children).toBe('/(onboarding)');
+    expect(screen.getByTestId('redirect').props.children).toBe('/(onboarding)/welcome');
   });
 
   it('n’envoie plus vers l’onboarding une fois le profil enregistré', async () => {

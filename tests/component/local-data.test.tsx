@@ -1,6 +1,6 @@
 import { fireEvent, waitFor } from '@testing-library/react-native';
 
-import WelcomeScreen from '@/app/(onboarding)/index';
+import WelcomeScreen from '@/app/(onboarding)/welcome';
 import LocalDataScreen from '@/app/data/index';
 import RootScreen from '@/app/index';
 import { BACKUP_FORMAT, parseBackup, serializeBackup } from '@/data/backup';
