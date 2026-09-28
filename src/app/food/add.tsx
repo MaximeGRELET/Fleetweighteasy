@@ -133,9 +133,10 @@ export default function AddFoodEntryScreen() {
           <Text variant="caption" tone="textMuted">
             Portions usuelles
           </Text>
-          <View style={styles.chips}>
+          <View style={styles.chips} accessibilityRole="radiogroup">
             {item.servingSizes.map((serving) => (
               <Chip
+                role="radio"
                 key={`${serving.label}-${serving.grams}`}
                 label={`${serving.label} (${formatGrams(serving.grams)})`}
                 selected={quantityG === serving.grams}
@@ -151,9 +152,10 @@ export default function AddFoodEntryScreen() {
         <Text variant="caption" tone="textMuted">
           Repas
         </Text>
-        <View style={styles.chips}>
+        <View style={styles.chips} accessibilityRole="radiogroup">
           {MEAL_TYPES.map((type) => (
             <Chip
+              role="radio"
               key={type}
               label={MEAL_TYPE_LABELS[type]}
               selected={mealType === type}

@@ -78,9 +78,10 @@ export default function TrainingScreen() {
         <Text variant="caption" tone="textMuted">
           Jours d’entraînement par semaine
         </Text>
-        <View style={styles.chips}>
+        <View style={styles.chips} accessibilityRole="radiogroup">
           {DAYS.map((day) => (
             <Chip
+              role="radio"
               key={day}
               testID={`training-days-${day}`}
               label={String(day)}

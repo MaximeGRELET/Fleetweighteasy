@@ -84,6 +84,9 @@ describe('ajout d’une entrée au journal', () => {
     await fireEvent.press(screen.getByTestId('add-serving-150'));
 
     expect(screen.getByTestId('add-quantity').props.value).toBe('150');
+    // Une seule portion correspond à la quantité : choix exclusif.
+    expect(screen.getByTestId('add-serving-150').props.accessibilityRole).toBe('radio');
+    expect(screen.getByTestId('add-serving-150').props.accessibilityState.selected).toBe(true);
   });
 
   it('refuse une quantité nulle ou absurde', async () => {
@@ -173,6 +176,22 @@ describe('correction d’une entrée existante', () => {
     expect(screen.getByTestId('add-quantity').props.value).toBe('200');
     expect(screen.getByTestId('add-meal-lunch').props.accessibilityState.checked).toBe(true);
     expect(screen.getByTestId('add-confirm')).toHaveTextContent('Enregistrer la correction');
+  });
+
+  /** Un seul repas à la fois : les puces s'annoncent en `radio`. */
+  it('annonce le repas comme un choix exclusif', async () => {
+    const { entry } = givenLoggedEntry();
+    setLocalSearchParams({ entryId: entry.id });
+
+    const screen = await harness.renderScreen(<AddFoodEntryScreen />);
+
+    const lunch = screen.getByTestId('add-meal-lunch');
+    expect(lunch.props.accessibilityRole).toBe('radio');
+    expect(lunch.props.accessibilityState).toEqual({ checked: true, selected: true });
+    expect(screen.getByTestId('add-meal-dinner').props.accessibilityState).toEqual({
+      checked: false,
+      selected: false,
+    });
   });
 
   it('refait le snapshot au lieu de le mettre à l’échelle', async () => {
