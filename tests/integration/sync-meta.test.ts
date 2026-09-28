@@ -1,4 +1,12 @@
-import { getSyncMeta, listDirty, markDeleted, markDirty, markSynced } from '@/data/db/sync-meta';
+import {
+  getSyncMeta,
+  listDirty,
+  markDeleted,
+  markDirty,
+  markSynced,
+  markSyncedIfUnchanged,
+  recordRemoteVersion,
+} from '@/data/db/sync-meta';
 import { createWeightRepository } from '@/data/repositories/weight.repo';
 
 import { createTestDatabase, type TestDatabase } from './helpers/test-db';
@@ -93,6 +101,47 @@ describe('journal de synchronisation', () => {
     markDirty(database.db, 'profile', '1', database.currentNow());
 
     expect(listDirty(database.db)).toHaveLength(1);
+  });
+
+  it('acquitte un envoi quand l’entité n’a pas bougé depuis', () => {
+    markDirty(database.db, 'profile', '1', database.currentNow());
+    const pushed = database.currentNow().toISOString();
+
+    expect(markSyncedIfUnchanged(database.db, 'profile', '1', pushed, database.currentNow())).toBe(
+      true,
+    );
+    expect(listDirty(database.db)).toEqual([]);
+  });
+
+  it('n’acquitte pas un envoi dépassé par une modification survenue entre-temps', () => {
+    markDirty(database.db, 'profile', '1', database.currentNow());
+    const pushed = database.currentNow().toISOString();
+    database.advanceMinutes(1);
+    markDirty(database.db, 'profile', '1', database.currentNow());
+
+    expect(markSyncedIfUnchanged(database.db, 'profile', '1', pushed, database.currentNow())).toBe(
+      false,
+    );
+    expect(listDirty(database.db)).toHaveLength(1);
+  });
+
+  it('enregistre une version reçue avec son horodatage d’origine, sans rien à renvoyer', () => {
+    markDirty(database.db, 'meal', 'm1', database.currentNow());
+    database.advanceMinutes(30);
+
+    recordRemoteVersion(
+      database.db,
+      { entityType: 'meal', entityId: 'm1', updatedAt: '2026-03-15T08:10:00.000Z' },
+      database.currentNow(),
+    );
+
+    expect(getSyncMeta(database.db, 'meal', 'm1')).toEqual({
+      entityType: 'meal',
+      entityId: 'm1',
+      updatedAt: '2026-03-15T08:10:00.000Z',
+      syncedAt: database.currentNow().toISOString(),
+      dirty: false,
+    });
   });
 
   it('inscrit l’écriture métier et sa trace de synchro dans la même transaction', () => {

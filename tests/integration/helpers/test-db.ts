@@ -29,6 +29,11 @@ export interface TestDatabase {
 export interface TestDatabaseOptions {
   /** Instant initial de l'horloge figée. */
   startAt?: Date;
+  /**
+   * Préfixe des identifiants générés. Deux bases simulant deux appareils en
+   * ont besoin : de vrais UUID ne se croiseraient jamais, `id-1` si.
+   */
+  idPrefix?: string;
 }
 
 const DEFAULT_START = new Date('2026-03-15T08:00:00.000Z');
@@ -47,7 +52,7 @@ export function createTestDatabase(options: TestDatabaseOptions = {}): TestDatab
     db,
     generateId: () => {
       idCounter += 1;
-      return `id-${idCounter}`;
+      return `${options.idPrefix ?? 'id'}-${idCounter}`;
     },
     now: () => clock,
   };
