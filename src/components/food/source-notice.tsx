@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Callout } from '@/components/ui';
+import { useAnnounce } from '@/hooks/use-announce';
 import type { SourceMessage } from '@/lib/messages/food-source';
 
 export interface SourceNoticeProps {
@@ -22,6 +23,9 @@ export interface SourceNoticeProps {
  * vide.
  */
 export function SourceNotice({ message, onRetry, onManualEntry, testID }: SourceNoticeProps) {
+  // L'échec arrive après coup, pendant que le focus est resté sur la recherche.
+  useAnnounce(`${message.title}. ${message.body}`);
+
   return (
     <View style={styles.container} testID={testID}>
       <Callout title={message.title} body={message.body} tone="neutral" />

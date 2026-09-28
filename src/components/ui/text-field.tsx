@@ -2,6 +2,7 @@ import { StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-nat
 
 import { useTheme } from '@/hooks/use-theme';
 
+import { StatusMessage } from './status-message';
 import { Text } from './text';
 
 export interface TextFieldProps {
@@ -66,9 +67,7 @@ export function TextField({
         ) : null}
       </View>
       {error ? (
-        <Text variant="caption" tone="caution">
-          {error}
-        </Text>
+        <StatusMessage tone="caution" message={error} />
       ) : hint ? (
         <Text variant="caption" tone="textMuted">
           {hint}

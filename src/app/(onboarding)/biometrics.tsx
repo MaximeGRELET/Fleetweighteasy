@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { StepScreen } from '@/components/onboarding/step-screen';
-import { Callout, OptionCard, Text, TextField } from '@/components/ui';
+import { Callout, OptionCard, StatusMessage, Text, TextField } from '@/components/ui';
 import { buildBiometricsStepSchema } from '@/domain/profile/validation';
 import type { Sex } from '@/domain/profile/types';
 import { useOnboarding } from '@/hooks/use-onboarding';
@@ -90,11 +90,7 @@ export default function BiometricsScreen() {
           />
         ))}
         <Callout title="Pourquoi cette question" body={SEX_FIELD_NOTE} />
-        {errors.sex ? (
-          <Text variant="caption" tone="caution">
-            {errors.sex}
-          </Text>
-        ) : null}
+        {errors.sex ? <StatusMessage tone="caution" message={errors.sex} /> : null}
       </View>
 
       <View style={styles.group}>
@@ -117,11 +113,7 @@ export default function BiometricsScreen() {
             {draft.birthDate ? formatIsoDate(draft.birthDate) : 'Choisir une date'}
           </Text>
         </Pressable>
-        {errors.birthDate ? (
-          <Text variant="caption" tone="caution">
-            {errors.birthDate}
-          </Text>
-        ) : null}
+        {errors.birthDate ? <StatusMessage tone="caution" message={errors.birthDate} /> : null}
         {pickerVisible ? (
           <DateTimePicker
             testID="birthdate-picker"

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Text } from '@/components/ui';
+import { Button, StatusMessage, Text } from '@/components/ui';
 import type { MealType } from '@/domain/journal/types';
 import { MEAL_TYPES } from '@/domain/journal/types';
 import { ALLERGEN_LABELS } from '@/domain/recipes/allergens';
@@ -161,9 +161,11 @@ export default function RecipeDetailScreen() {
           </View>
 
           {loggedTo ? (
-            <Text variant="caption" tone="primary" testID="recipe-logged">
-              Ajouté à ton {MEAL_LABELS[loggedTo].toLowerCase()}.
-            </Text>
+            <StatusMessage
+              tone="primary"
+              message={`Ajouté à ton ${MEAL_LABELS[loggedTo].toLowerCase()}.`}
+              testID="recipe-logged"
+            />
           ) : null}
 
           <Button
