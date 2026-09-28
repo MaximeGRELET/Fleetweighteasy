@@ -46,7 +46,11 @@ export function TextField({
         ]}
       >
         <TextInput
-          accessibilityLabel={label}
+          // L'unité et le message sous le champ sont des textes voisins, que
+          // le lecteur d'écran ne relie pas au champ : l'unité rejoint
+          // l'étiquette, l'erreur ou l'aide passe en indication.
+          accessibilityLabel={suffix ? `${label}, en ${suffix}` : label}
+          accessibilityHint={error ?? hint}
           testID={testID}
           value={value}
           onChangeText={onChangeText}

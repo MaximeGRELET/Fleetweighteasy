@@ -31,7 +31,7 @@ export function RecipeCard({ recipe, onPress, testID }: RecipeCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${recipe.name}, ${formatKcal(recipe.nutritionPerServing.kcal)} par portion`}
+      accessibilityLabel={describeRecipe(recipe)}
       testID={testID}
       onPress={onPress}
       style={[
@@ -62,6 +62,33 @@ export function RecipeCard({ recipe, onPress, testID }: RecipeCardProps) {
       ) : null}
     </Pressable>
   );
+}
+
+/**
+ * Ce que lit le lecteur d'écran. L'étiquette d'un élément cliquable remplace
+ * le texte de ses enfants : tout ce qui est affiché doit donc y figurer, sans
+ * quoi il n'existe pas pour qui n'y voit pas.
+ *
+ * Les allergènes viennent juste après le nom, et non en fin de carte comme à
+ * l'écran : à l'oral, on n'écoute pas toujours une annonce jusqu'au bout, et
+ * c'est la seule information de la carte qui touche à la sécurité.
+ */
+function describeRecipe(recipe: ResolvedRecipe): string {
+  const { nutritionPerServing: nutrition } = recipe;
+  const parts = [recipe.name];
+
+  if (recipe.allergens.length > 0) {
+    parts.push(
+      `Contient : ${recipe.allergens.map((allergen) => ALLERGEN_LABELS[allergen]).join(', ')}`,
+    );
+  }
+
+  parts.push(
+    `${recipe.prepTimeMin} min, ${DIFFICULTY_LABELS[recipe.difficulty]}, ${formatKcal(nutrition.kcal)} par portion`,
+    `${nutrition.proteinG} g de protéines, ${nutrition.carbsG} g de glucides, ${nutrition.fatG} g de lipides`,
+  );
+
+  return parts.join('. ');
 }
 
 const styles = StyleSheet.create({
