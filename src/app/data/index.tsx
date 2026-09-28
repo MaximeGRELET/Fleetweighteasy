@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Callout, Text } from '@/components/ui';
+import { useAnnounce } from '@/hooks/use-announce';
 import { type BackupSummary, type PickedBackup, useLocalData } from '@/hooks/use-local-data';
 import { useTheme } from '@/hooks/use-theme';
 import { formatIsoDate } from '@/lib/format';
@@ -204,6 +205,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function ExplanationCallout({ explanation }: { explanation: Explanation }) {
+  // Un export ou un import refusé ne change rien à l'écran hormis ce message :
+  // sans annonce, l'échec passerait inaperçu au lecteur d'écran.
+  useAnnounce(`${explanation.title}. ${explanation.body}`);
+
   return (
     <Callout
       tone={explanation.tone}

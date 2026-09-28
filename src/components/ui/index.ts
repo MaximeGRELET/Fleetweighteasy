@@ -5,5 +5,6 @@ export { Chip, type ChipProps } from './chip';
 export { OptionCard, type OptionCardProps } from './option-card';
 export { ProgressBar, type ProgressBarProps } from './progress-bar';
 export { ProgressDots, type ProgressDotsProps } from './progress-dots';
+export { StatusMessage, type StatusMessageProps } from './status-message';
 export { Text, type AppTextProps } from './text';
 export { TextField, type TextFieldProps } from './text-field';

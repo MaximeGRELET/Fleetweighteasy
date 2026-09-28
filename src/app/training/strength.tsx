@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Callout, Text, TextField } from '@/components/ui';
+import { Button, Callout, StatusMessage, Text, TextField } from '@/components/ui';
 import { EXERCISES_BY_ID } from '@/domain/training/content/exercises';
 import { nextProgressionTarget } from '@/domain/training/progression';
 import type { ExerciseSet, ProgramExercise } from '@/domain/training/types';
@@ -164,9 +164,7 @@ export default function StrengthScreen() {
           <Button label="Enregistrer la séance" onPress={save} testID="strength-save" />
 
           {saved ? (
-            <Text variant="caption" tone="primary" testID="strength-saved">
-              Séance enregistrée.
-            </Text>
+            <StatusMessage tone="primary" message="Séance enregistrée." testID="strength-saved" />
           ) : null}
 
           <Button

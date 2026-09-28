@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Callout, Text, TextField } from '@/components/ui';
+import { Button, Callout, StatusMessage, Text, TextField } from '@/components/ui';
 import { estimateCardioKcal } from '@/domain/nutrition/calories-sport';
 import {
   listMetEntriesForActivity,
@@ -135,9 +135,7 @@ export default function CardioScreen() {
           />
 
           {saved ? (
-            <Text variant="caption" tone="primary" testID="cardio-saved">
-              Séance enregistrée.
-            </Text>
+            <StatusMessage tone="primary" message="Séance enregistrée." testID="cardio-saved" />
           ) : null}
 
           <Button
