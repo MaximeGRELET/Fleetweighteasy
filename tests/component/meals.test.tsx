@@ -115,6 +115,18 @@ describe('repas prédéfinis', () => {
   });
 
   describe('rejeu en un tap', () => {
+    /** Un tap journalise aussitôt : ce sont des actions, pas une sélection. */
+    it('annonce les repas cibles comme des boutons', async () => {
+      const meal = givenMeal();
+
+      const screen = await harness.renderScreen(<MealsScreen />);
+      await fireEvent.press(screen.getByTestId(`meal-${meal.id}-replay`));
+
+      const target = screen.getByTestId(`meal-${meal.id}-to-lunch`);
+      expect(target.props.accessibilityRole).toBe('button');
+      expect(target.props.accessibilityState).toEqual({});
+    });
+
     it('journalise le repas avec le snapshot du domaine', async () => {
       const meal = givenMeal();
 
