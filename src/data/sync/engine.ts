@@ -17,6 +17,10 @@ import type { EntityChange, SyncRemote, SyncReport } from './types';
 /**
  * Moteur de synchronisation local ↔ serveur.
  *
+ * **Inactif.** L'app reste entièrement locale (AVANCEMENT.md, « Décisions —
+ * Phase 9 ») : rien ne l'importe, il n'entre pas dans l'app. Il est conservé,
+ * testé, pour le jour où le multi-appareils reviendrait.
+ *
  * Le local reste la source de vérité pour l'usage ; le serveur est la
  * sauvegarde et le point de rencontre des appareils (PHASES_6_A_10 §9.5). Un
  * cycle se fait en deux temps :

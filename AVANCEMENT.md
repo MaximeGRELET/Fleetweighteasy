@@ -353,7 +353,7 @@ d'une séance de musculation sans crédit calorique, cible de progression, avert
 
 ---
 
-## Phase 9 — Backend & synchronisation : dépendances d'entrée
+## Phase 9 — dépendances d'entrée
 
 Points identifiés au fil des phases précédentes qui **conditionnent** la Phase 9. Ce ne sont pas
 des sujets réglés : ils attendent d'être traités ici, ou plus tôt si le besoin se précise.
@@ -379,59 +379,50 @@ Restent ouverts :
 
 - **`requestedDailyKcal`** : la colonne existe, mais aucun écran ne demande d'objectif calorique
   explicite. Le signal « objectifs répétés sous le plancher » ne peut donc pas encore se déclencher.
-- **La rétention.** Ce sont des données de santé sensibles. `profile.clear()` et la
-  réinitialisation effacent l'historique avec le profil ; la durée de conservation côté serveur
-  relève de la même décision que le reste de la synchro.
+- **La rétention.** Ce sont des données de santé sensibles. Elles restent sur l'appareil
+  (voir « Décisions — Phase 9 ») : `profile.clear()` et la réinitialisation effacent l'historique
+  avec le profil, et l'export (#21) devra l'inclure.
 
 ---
 
 ## Décisions — Phase 9
 
-Prises le 28/09/2026 (ticket #2). Découpage en tickets : #17 à #23.
+### Tout reste en local (28/09/2026)
 
-| Sujet                | Décision                                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------ |
-| Backend              | Supabase (Auth + Postgres), comme prévu par la spec, isolé derrière `SyncRemote`.          |
-| Région               | UE, `eu-west-3` (Paris).                                                                   |
-| Authentification     | Email et mot de passe. L'app reste utilisable sans compte ; la synchro est facultative.    |
-| Conflits             | La dernière écriture gagne, ligne par ligne, sur l'horodatage d'origine de la version.     |
-| Curseur de réception | Numéro d'ordre attribué par le serveur, jamais l'horloge de l'appareil.                    |
-| Rétention            | **Proposée, à valider (#23)** : aussi longtemps que le compte, suppression immédiate avec. |
+**L'app n'a pas de serveur.** Les données vivent dans SQLite, sur le téléphone, et nulle part
+ailleurs. Cette décision remplace le backend Supabase prévu par PHASES_6_A_10 §9.
 
-**Règles par entité.**
+Ce que ça apporte :
 
-- **Profil, consentement, repas, aliments maison, journal, séances** : la dernière écriture gagne.
-  Une suppression est une version comme une autre, avec son horodatage : une modification plus
-  ancienne ne ressuscite pas une entité supprimée.
-- **Pesées** : une par date. Si deux appareils pèsent le même jour, la plus récente reste et
-  l'autre est supprimée partout. La suppression est datée strictement après la pesée qu'elle
-  écarte, même si l'horloge de l'appareil a reculé.
-- **Historique des objectifs** : ajout seul, il ne peut pas entrer en conflit. Les versions reçues
-  sont écrites telles quelles, sans repasser par `profile.save`, qui fabriquerait de faux
-  changements d'objectif.
-- **Cache Open Food Facts** : non synchronisé (décision de la Phase 4, il se reconstruit depuis le
-  réseau). Une entrée du journal qui en vient arrive sur l'autre appareil avec son snapshot, mais
-  détachée de son produit. **Point ouvert**, voir ci-dessous.
+- **Aucun hébergement de données de santé** : la question HDS et celle de la rétention côté
+  serveur disparaissent. Le RGPD reste, mais sur un périmètre bien plus simple : consentement,
+  export, effacement, tous locaux.
+- **Pas de comptes** : pas d'authentification, pas de mots de passe, pas de sessions à sécuriser.
+- **Aucune dépendance à un service tiers** pour les données de l'utilisateur.
 
-**Robustesse.** Envoi par lots de 200, chacun acquitté aussitôt : une coupure ne fait renvoyer que
-la suite. Une entité modifiée pendant l'envoi reste en file. La réception est rassemblée puis
-appliquée en une seule transaction avec le nouveau curseur : une coupure n'applique rien et le cycle
-suivant reprend au même point. Les parents sont appliqués avant les enfants.
+Ce qu'on abandonne : le **multi-appareils** et la **restauration automatique** sur un nouveau
+téléphone.
 
-**Hébergement de données de santé (HDS).** Supabase n'est pas certifié HDS. Qu'une app de
-bien-être y soit soumise se discute : avis juridique requis avant la prod (#23, bloquant).
+**Ce qui les remplace : une sauvegarde par fichier (#21).** L'utilisateur exporte ses données dans
+un fichier, qu'il range où il veut (Drive, mail, ordinateur), et le réimporte sur le même
+téléphone ou sur un autre. C'est aussi l'export exigé par le RGPD.
 
-**Point ouvert : produits Open Food Facts référencés.** Sur un second appareil, corriger une entrée
-tirée d'OFF ne retrouve pas le produit d'origine. Deux options : synchroniser les seuls produits OFF
-référencés par le journal ou un repas (données publiques, mais qui révèlent l'alimentation au même
-titre que le journal lui-même), ou les recharger depuis OFF par code-barres à l'ouverture. À
-trancher avant #19.
+**Sauvegarde du système.** Les sauvegardes iCloud et Google de l'appareil peuvent inclure la base
+de l'app. Elles restent sous le contrôle de l'utilisateur, sur son propre compte : à mentionner
+dans la politique de confidentialité, sans rien à faire côté code.
+
+### Le moteur de synchro reste en place, inactif
+
+Le moteur livré en #17 (`src/data/sync/`) n'est branché nulle part : aucun écran ni hook ne
+l'importe, il n'entre donc pas dans l'app. Il reste testé et prêt si le multi-appareils revient
+un jour. Ses règles de résolution des conflits restent documentées dans son en-tête. `sync_meta`
+continue d'être tenue à jour : c'est ce qui rendrait une synchro possible plus tard sans refonte.
+
+Tickets fermés par cette décision : #18, #19, #20, #22, #23. #2 est remplacé par #21.
 
 ---
 
-## Prochaine étape : Phase 9 — Backend & synchronisation
+## Prochaine étape : sauvegarde par fichier (#21)
 
-Le groundwork est posé depuis la Phase 2 : `sync_meta` avec `dirty` / `updatedAt` / `syncedAt` /
-`deletedAt`, écrit dans la même transaction que chaque écriture métier, et les pierres tombales des
-suppressions. Les dépendances d'entrée sont listées ci-dessus ; l'historique des objectifs
-successifs est désormais en place (ticket #1).
+Export de toutes les données locales dans un fichier JSON lisible, import pour restaurer, et
+effacement accessible depuis l'app — plus seulement depuis le panneau de développement.

@@ -26,7 +26,7 @@ import type { AppDatabase } from './db/types';
  * Deux différences assumées avec les `clear()` / `revoke()` des repositories :
  *
  * - `sync_meta` est **vidée**, pas remplie de pierres tombales. Un `clear()`
- *   isolé doit propager la suppression au serveur (Phase 9) ; ici on simule une
+ *   isolé doit pouvoir propager la suppression à une synchro ; ici on simule une
  *   installation neuve, où il n'y a rien à propager parce qu'il n'y a jamais
  *   rien eu.
  * - `__drizzle_migrations` n'est **pas** touchée. L'effacer ferait rejouer les
