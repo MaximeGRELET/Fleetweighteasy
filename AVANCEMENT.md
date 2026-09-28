@@ -19,7 +19,7 @@
 | 6     | Moteur de conseils           | ✅ Terminée & commitée                 |
 | 7     | Recettes                     | ✅ Terminée — validée sur appareil     |
 | 8     | Sport                        | ✅ Construite — à valider sur appareil |
-| 9     | Backend & synchronisation    | 🚧 En cours — moteur de synchro (#17)  |
+| 9     | Données locales & sauvegarde | ✅ Construite — à valider sur appareil |
 | 10    | Durcissement & mise en prod  | ⬜                                     |
 
 ---
@@ -279,6 +279,30 @@ affiché en attendant, sur l'accueil sport comme sur la séance.
 
 ---
 
+### Phase 9 — Données locales & sauvegarde
+
+- **Tout reste en local**, sans serveur ni compte : voir « Décisions — Phase 9 ».
+- **Historique des objectifs** (`goal_change_event`, #1) : `detectRiskSignals` est enfin alimenté,
+  et branché de bout en bout sur la bande de sécurité.
+- **Sauvegarde par fichier** (#21), écran « Mes données », joignable depuis l'accueil **et** depuis
+  l'accueil de l'onboarding (restaurer sur un téléphone neuf sans refaire le parcours) :
+  - **Export** : un JSON lisible et versionné, avec toutes les tables applicatives, partagé par la
+    feuille de partage du système. Le fichier temporaire est supprimé ensuite, même en cas d'échec.
+    Un rappel indique que le fichier contient des données de santé, non chiffrées.
+  - **Import** : tout est vérifié avant la moindre écriture (format, version, type de chaque
+    colonne, colonnes JSON passées aux mappers de lecture). Un aperçu est montré, puis tout est
+    **remplacé** après confirmation, en une transaction : un fichier refusé ne change rien.
+  - **Effacement** accessible à l'utilisateur (droit à l'effacement), plus seulement en dev.
+  - Test de complétude recensé depuis `sqlite_master` : une future table devra être sauvegardée ou
+    explicitement classée comme propre à l'appareil.
+- **Moteur de synchro** (#17) : construit et testé, puis mis en sommeil par la décision de rester
+  local. Il n'entre pas dans l'app.
+- `expo-sharing` ajouté (inclus dans Expo Go). Le sélecteur de fichiers vient d'`expo-file-system`,
+  déjà présent.
+- 1 300 tests au vert, lint et typecheck propres.
+
+---
+
 ## ⚠️ Actions qui te reviennent (hors code) — à ne pas perdre
 
 1. **`EXPO_PUBLIC_OFF_CONTACT`** doit contenir une **adresse réellement surveillée** avant toute mise en service. C'est le canal par lequel Open Food Facts prévient avant de bloquer. Un placeholder = risque de blocage silencieux en prod. _(En dev, ton email personnel suffit.)_
@@ -321,6 +345,20 @@ d'une séance de musculation sans crédit calorique, cible de progression, avert
 - [ ] **Parcours complet** : tableau du jour → séances → cardio → retour, et vérifier que la
       dépense estimée remonte bien au budget du jour dans le mode réglé.
 - [ ] **Lisibilité du message de progression** après saisie, qui s'affiche sous chaque exercice.
+
+---
+
+## À valider sur appareil (Phase 9, #28)
+
+Le partage et le sélecteur de fichiers sont des API de plateforme, simulées dans les tests :
+
+- **Export** : la feuille de partage s'ouvre ; enregistrer dans Drive/Fichiers, ou s'envoyer par
+  mail, produit bien un `.json` lisible.
+- **Import** : le fichier se retrouve dans le sélecteur, sur Android comme sur iOS (pas de filtre de
+  type, volontairement) ; l'aperçu s'affiche ; la restauration ramène au tableau du jour.
+- **Téléphone neuf** : depuis l'accueil de l'onboarding, « J'ai une sauvegarde à restaurer » →
+  import → arrivée directe sur le tableau du jour.
+- **Effacement** : double appui, retour à l'onboarding.
 
 ---
 
@@ -422,7 +460,9 @@ Tickets fermés par cette décision : #18, #19, #20, #22, #23. #2 est remplacé 
 
 ---
 
-## Prochaine étape : sauvegarde par fichier (#21)
+## Prochaine étape : Phase 10 — Durcissement & mise en prod
 
-Export de toutes les données locales dans un fichier JSON lisible, import pour restaurer, et
-effacement accessible depuis l'app — plus seulement depuis le panneau de développement.
+La Phase 9 est construite ; reste sa validation sur appareil (ci-dessus). La Phase 10 enchaîne :
+E2E sur les parcours critiques, passe d'accessibilité, écrans légaux (confidentialité : mentionner
+les sauvegardes iCloud/Google et le fichier d'export), préparation des stores. Les points
+« bloquant-prod » hors code (#4, #10 à #13) restent à lever avant toute mise en service.

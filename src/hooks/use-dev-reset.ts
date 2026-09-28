@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 
-import { useOnboardingStore } from '@/stores/onboarding';
-import { useSessionStore } from '@/stores/session';
+import { resetInMemoryState } from '@/stores/reset';
 
 import { useRepositories } from './use-repositories';
 
@@ -29,19 +28,6 @@ export function useDevDataReset(): () => void {
     }
 
     repositories.maintenance.resetAllLocalData();
-
-    // L'état mémoire doit repartir de zéro lui aussi, sinon un brouillon
-    // d'onboarding abandonné ou un jour sélectionné survivrait à l'effacement.
-    useOnboardingStore.getState().reset();
-
-    const session = useSessionStore.getState();
-    session.reset();
-    // `reset()` remet `databaseReady` à faux, ce qui serait un mensonge : les
-    // migrations restent appliquées, seules les lignes ont disparu.
-    session.setDatabaseReady(true);
-    // Après `reset()`, la révision vaut 0 — soit parfois sa valeur d'avant.
-    // L'incrémenter garantit un changement, donc une relecture du profil par
-    // les écrans abonnés, et donc la redirection vers l'onboarding.
-    session.bumpProfileRevision();
+    resetInMemoryState();
   }, [repositories]);
 }

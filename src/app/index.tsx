@@ -121,6 +121,12 @@ function TodayScreen() {
               onPress={() => router.push('/training')}
               testID="today-training"
             />
+            <Button
+              label="Mes données"
+              variant="quiet"
+              onPress={() => router.push('/data')}
+              testID="today-data"
+            />
           </View>
 
           <View style={styles.sections}>

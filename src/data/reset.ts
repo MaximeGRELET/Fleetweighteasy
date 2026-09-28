@@ -65,9 +65,18 @@ const RESETTABLE_TABLES: readonly SQLiteTable[] = [
  * incohérent qu'on cherche à faire disparaître.
  */
 export function resetAllLocalData(db: AppDatabase): void {
-  db.transaction((tx) => {
-    for (const table of RESETTABLE_TABLES) {
-      tx.delete(table).run();
-    }
-  });
+  db.transaction((tx) => deleteAllLocalRows(tx));
+}
+
+/**
+ * Vide toutes les tables applicatives, **sans** ouvrir de transaction.
+ *
+ * Pour l'appelant qui en a déjà une et doit enchaîner d'autres écritures dans
+ * le même tout-ou-rien : la restauration d'une sauvegarde efface puis réécrit,
+ * et un échec à la réécriture doit laisser les anciennes données intactes.
+ */
+export function deleteAllLocalRows(db: AppDatabase): void {
+  for (const table of RESETTABLE_TABLES) {
+    db.delete(table).run();
+  }
 }

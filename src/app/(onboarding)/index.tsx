@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 
 import { DevPanel } from '@/components/dev/dev-panel';
 import { StepScreen } from '@/components/onboarding/step-screen';
-import { Text } from '@/components/ui';
+import { Button, Text } from '@/components/ui';
 import { appInfo } from '@/lib/app-info';
 import { HEALTH_DISCLAIMER } from '@/lib/legal';
 
@@ -27,6 +27,16 @@ export default function WelcomeScreen() {
         Tes chiffres viennent de formules scientifiques référencées, pas d’estimations au doigt
         mouillé — et tu pourras toujours voir d’où ils sortent.
       </Text>
+
+      {/* Sans serveur, une sauvegarde est la seule façon de retrouver ses
+          données sur un téléphone neuf : la restaurer ne doit pas exiger de
+          refaire tout le parcours d'abord. */}
+      <Button
+        label="J’ai une sauvegarde à restaurer"
+        variant="quiet"
+        onPress={() => router.push('/data')}
+        testID="onboarding-restore"
+      />
 
       {/* Aussi ici, et pas seulement sur l'écran du jour : le consentement est
           persisté dès le deuxième écran, donc rejouer le parcours depuis le
